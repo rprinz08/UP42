@@ -53,7 +53,7 @@ int _inbyte(unsigned short timeout) { // msec timeout
     timeouts.WriteTotalTimeoutMultiplier = 0;
     timeouts.WriteTotalTimeoutConstant = 0;
     if(!SetCommTimeouts(_portHandle, &timeouts))
-        system_error("setting port time-outs");	
+        printError(stderr, "setting port time-outs");	
 	
 	ReadFile(_portHandle, &ch, 1, &read, NULL); 
 	
@@ -70,7 +70,7 @@ void _outbyte(int c) {
 
 void _setDTR(HANDLE _portHandle, char DTR) {
 	if(!EscapeCommFunction(_portHandle, (DTR ? SETDTR : CLRDTR)))
-		system_error("changing DTR");
+		printError(stderr, "changing DTR");
 }
 
 int rxTest(void) {

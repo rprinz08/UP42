@@ -29,6 +29,10 @@ read http://www.purposeful.co.uk/tfl/
 #define EX_USAGE EXIT_FAILURE
 #endif
 
+#ifndef DO_EXIT
+#define DO_EXIT     exit
+#endif
+
 struct opt_spec_s {
   int key;
   int flags;
@@ -75,7 +79,7 @@ void *gopt_sort( int *argc, const char **argv, const void *opt_specs ){
 
     if( ! opts ){
       perror( argv[0] );
-      exit( EX_OSERR );
+      DO_EXIT( EX_OSERR );
     }  
     for( ; *arg_p; ++arg_p )
       if( '-' == (*arg_p)[0] && (*arg_p)[1] )
@@ -97,7 +101,7 @@ void *gopt_sort( int *argc, const char **argv, const void *opt_specs ){
                   if( next_option-> key ){
                     fprintf( stderr, "%s: --%.*s: abbreviated option is ambiguous\n", argv[0], (int)( option_cp -( (*arg_p) + 2 )), (*arg_p) + 2 );
                     free( opts );
-                    exit( EX_USAGE );
+                    DO_EXIT( EX_USAGE );
                   }
                   next_option-> key= opt_spec_p-> key;
                 }
@@ -115,7 +119,7 @@ void *gopt_sort( int *argc, const char **argv, const void *opt_specs ){
             if( ! next_option-> key ){
               fprintf( stderr, "%s: --%.*s: unknown option\n", argv[0], (int)strcspn( (*arg_p) + 2, "=" ), (*arg_p) + 2 );
               free( opts );
-              exit( EX_USAGE );              
+              DO_EXIT( EX_USAGE );              
             }
             for( opt_spec_p= opt_specs; opt_spec_p-> key != next_option-> key; ++opt_spec_p );
             found_long:
@@ -126,7 +130,7 @@ void *gopt_sort( int *argc, const char **argv, const void *opt_specs ){
                 if( opt_p-> key == opt_spec_p-> key ){
                   fprintf( stderr, "%s: --%.*s: option may not be repeated (in any long or short form)\n", argv[0], (int)strcspn( (*arg_p) + 2, "=" ), (*arg_p) + 2 );
                   free( opts );
-                  exit( EX_USAGE );
+                  DO_EXIT( EX_USAGE );
                 }
             }
             if( opt_spec_p-> flags & GOPT_ARG ){
@@ -136,7 +140,7 @@ void *gopt_sort( int *argc, const char **argv, const void *opt_specs ){
                 if( !*arg_p || ('-' == (*arg_p)[0] && (*arg_p)[1]) ){
                   fprintf( stderr, "%s: --%s: option requires an option argument\n", argv[0], (*(arg_p-1)) + 2 );
                   free( opts );
-                  exit( EX_USAGE );
+                  DO_EXIT( EX_USAGE );
                 }
                 next_option-> arg= *arg_p;
               }
@@ -145,7 +149,7 @@ void *gopt_sort( int *argc, const char **argv, const void *opt_specs ){
               if( strchr( (*arg_p) + 2, '=' )){
                 fprintf( stderr, "%s: --%.*s: option may not take an option argument\n", argv[0], (int)strcspn( (*arg_p) + 2, "=" ), (*arg_p) + 2 );
                 free( opts );
-                exit( EX_USAGE );
+                DO_EXIT( EX_USAGE );
               }
               next_option-> arg= NULL;
             }
@@ -170,7 +174,7 @@ void *gopt_sort( int *argc, const char **argv, const void *opt_specs ){
                     if( opt_p-> key == opt_spec_p-> key ){
                       fprintf( stderr, "%s: -%c: option may not be repeated (in any long or short form)\n", argv[0], *short_opt );
                       free( opts );
-                      exit( EX_USAGE );
+                      DO_EXIT( EX_USAGE );
                     }
                 }
                 next_option-> key= opt_spec_p-> key;
@@ -184,7 +188,7 @@ void *gopt_sort( int *argc, const char **argv, const void *opt_specs ){
                     if( !*arg_p || ('-' == (*arg_p)[0] && (*arg_p)[1]) ){
                       fprintf( stderr, "%s: -%c: option requires an option argument\n", argv[0], *short_opt );
                       free( opts );
-                      exit( EX_USAGE );
+                      DO_EXIT( EX_USAGE );
                     }
                     next_option-> arg= *arg_p;
                   }
@@ -197,7 +201,7 @@ void *gopt_sort( int *argc, const char **argv, const void *opt_specs ){
               }
             fprintf( stderr, "%s: -%c: unknown option\n", argv[0], *short_opt );
             free( opts );
-            exit( EX_USAGE );
+            DO_EXIT( EX_USAGE );
             continue_2: ;
           }
           break_2: ;
