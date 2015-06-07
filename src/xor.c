@@ -4,23 +4,15 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <ctype.h>
+
 #ifdef _WIN32
 #include <windows.h>
 #endif
+
+#include "e4c.h"
 #include "up02c.h"
 
-#ifdef _WIN32
-    typedef unsigned char u_char;
-#endif
-
 #define BUFFER_SIZE  8192
-
-
-
-void std_err(void) {
-    perror("\nError");
-    exit(1);
-}
 
 
 
@@ -37,10 +29,7 @@ char *parseKey(char *key, int *keyLen) {
         for(i = 0; i < l; i++)
             key[i] = tolower(key[i]);
 
-        parsedKey = malloc((l / 2) + 1);
-        if(!parsedKey)
-            std_err();
-
+        parsedKey = createString((l / 2) + 1);
         k = parsedKey;
         key += 2;
         for(;;) {
@@ -71,44 +60,32 @@ char *parseKey(char *key, int *keyLen) {
     fd = fopen(key, "rb");
     if(fd) {
         fstat(fileno(fd), &xstat);
-        parsedKey = malloc(xstat.st_size);
-        if(!parsedKey)
-            std_err();
-            
+        parsedKey = createString(xstat.st_size);
         fread(parsedKey, xstat.st_size, 1, fd);
         fclose(fd);
-        *keyLen = xstat.st_size;
         
+        *keyLen = xstat.st_size;        
         return(parsedKey);
     }
 
     // key is a string of characters
-    parsedKey = malloc(l);
-    if(!parsedKey)
-        std_err();
-        
+    parsedKey = createString(l);
     memcpy(parsedKey, key, l);
-    *keyLen = l;
     
+    *keyLen = l;    
     return(parsedKey);
 }
 
 
 
-void xorFile(FILE *inz, FILE *outz, u_char *key, int keyLen) {
+void xorFile(FILE *inz, FILE *outz, char *key, int keyLen) {
     int len;
-    u_char *buff, *p, *l, *k, *kl;
+    char *buff, *p, *l, *k, *kl;
             
-    kl = key + keyLen;
-    fprintf(stderr, " (hex dump follows):\n");
-    show_dump(key, keyLen, stderr);
-
-    buff = malloc(BUFFER_SIZE + 1);
-    if(!buff)
-        std_err();
-
-    fprintf(stderr, "- read and xor file\n");
     k = key;
+    kl = key + keyLen;
+    buff = createString(BUFFER_SIZE + 1);
+    
     while((len = fread(buff, 1, BUFFER_SIZE, inz))) {
         for(p = buff, l = buff + len; p != l; p++, k++) {
             if(k == kl)
@@ -121,54 +98,57 @@ void xorFile(FILE *inz, FILE *outz, u_char *key, int keyLen) {
             exit(1);
         }
     }
+    
+    freeTableElement(buff);
 }
 
 
 
-int xor(char *inf, char *outf, u_char *key) {
-    FILE *inz, *outz;
+int xor(char *inputFileName, char *outputFileName, char *key) {
+    FILE *inputFile, *outputFile;
     int keyLen;
-    u_char *parsedKey;
+    char *parsedKey;
 
     setbuf(stdout, NULL);
 
-    fprintf(stderr, "- input file: ");
-    if(!strcmp(inf, "-")) {
-        fprintf(stderr, "stdin\n");
-        inz = stdin;
-    } 
-    else {
-        fprintf(stderr, "%s\n", inf);
-        inz = fopen(inf, "rb");
-    }
-    if(!inz)
-        std_err();
+    if(!strcmp(inputFileName, "-"))
+        inputFile = stdin;
+    else
+        inputFile = fopen(inputFileName, "rb");
 
-    fprintf(stderr, "- output file: ");
-    if(!strcmp(outf, "-")) {
-        fprintf(stderr, "stdout\n");
-        outz = stdout;
+    if(!inputFile) {
+        printError(stderr, "opening input file (%s)", inputFileName);
+        return(EXIT_INPUT_FILE_ERROR);
     } 
-    else {
-        fprintf(stderr, "%s\n", outf);
-        outz = fopen(outf, "wb");
-    }
-    if(!outz)
-        std_err();
 
-    //parsedKey = parse_key(key, &keyLen);
-    parseKey(key, &keyLen);
-    
-    xorFile(inz, outz, parsedKey, keyLen);
+    if(!strcmp(outputFileName, "-"))
+        outputFile = stdout;
+    else 
+        outputFile = fopen(outputFileName, "wb");
+
+    if(!outputFile) {
+        printError(stderr, "opening output file (%s)", outputFileName);
+        return(EXIT_OUTPUT_FILE_ERROR);
+    } 
+
+    try {
+        parseKey(key, &keyLen);    
+        xorFile(inputFile, outputFile, parsedKey, keyLen);
+    }
+    catch(RuntimeException) {
+        const e4c_exception *exception = e4c_get_exception();
+        e4c_print_exception(exception);
+        return(EXIT_UNKNOWN_ERROR);
+    }
+    finally {        
+        if(inputFile != stdin)
+            fclose(inputFile);
         
-    if(inz != stdin)
-        fclose(inz);
+        if(outputFile != stdout)
+            fclose(outputFile);
+    }
         
-    if(outz != stdout)
-        fclose(outz);
-        
-    fprintf(stderr, "- finished\n");
-    return(0);
+    return(EXIT_OK);
 }
 
 

@@ -34,26 +34,30 @@ del /Q .\bin\*.res >nul 2>&1
 
 echo *** building UP02 clone
 rem === static
-echo e4c.h
-%CC% -c .\src\e4c.c -o .\bin\e4c.o
+set TARCH="x86"
+echo e4c.c
+%CC% -c .\src\e4c.c -o .\bin\e4c.o -DARCH=""%TARCH%""
 echo tools.c
-%CC% -c .\src\tools.c -o .\bin\tools.o
+%CC% -c .\src\tools.c -o .\bin\tools.o -DARCH=""%TARCH%""
 echo ini.c
-%CC% -c .\src\ini.c -o .\bin\ini.o
+%CC% -c .\src\ini.c -o .\bin\ini.o -DARCH=""%TARCH%""
 echo gopt.c
-%CC% -c .\src\gopt.c -o .\bin\gopt.o
+%CC% -c .\src\gopt.c -o .\bin\gopt.o -DDO_EXIT=exitProgram -DARCH=""%TARCH%""
 echo serial.c
-%CC% -c .\src\crc16.c -o .\bin\crc16.o
-echo xmodem.c
-%CC% -c .\src\serial.c -o .\bin\serial.o
+%CC% -c .\src\crc16.c -o .\bin\crc16.o -DARCH=""%TARCH%""
 echo crc16.c
-%CC% -c .\src\xmodem.c -o .\bin\xmodem.o
+%CC% -c .\src\xmodem.c -o .\bin\xmodem.o -DARCH=""%TARCH%""
+echo xmodem.c
+%CC% -c .\src\serial.c -o .\bin\serial.o -DARCH=""%TARCH%""
 echo xor.c
-%CC% -c .\src\xor.c -o .\bin\xor.o
+%CC% -c .\src\xor.c -o .\bin\xor.o -DARCH=""%TARCH%""
+echo walkera.c
+%CC% -c .\src\walkera.c -o .\bin\walkera.o -DARCH=""%TARCH%""
 echo up02c.c
-%CC% .\src\up02c.c ^
+%CC% .\src\up02c.c  -DARCH=""%TARCH%"" ^
 	.\bin\e4c.o .\bin\tools.o .\bin\ini.o .\bin\gopt.o ^
-	.\bin\crc16.o .\bin\serial.o .\bin\xmodem.o .\bin\xor.o ^
+	.\bin\serial.o .\bin\crc16.o .\bin\xmodem.o .\bin\xor.o ^
+	.\bin\walkera.o ^
 	-o .\bin\up02c.exe
 if %ERRORLEVEL% GEQ 1 EXIT /B 1
 

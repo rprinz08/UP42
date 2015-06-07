@@ -3,24 +3,24 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <ctype.h>
+
 #ifdef _WIN32
 #include <windows.h>
 #endif
 
-//#define E4C_THREADSAFE
 #include "e4c.h"
-
 #include "gopt.h"
 #include "show_dump.h"
 #include "up02c.h"
 
 int verbosity = 0;
 int quiet = 0;
-char freeTempFile = 0;
-char freeConfigFile = 0;
+char *emptyString = "";
 
 
 void exitProgram(int exitCode) {
+    freeAllTable();
+      
     e4c_context_end();
     exit(exitCode);
 }
@@ -28,14 +28,15 @@ void exitProgram(int exitCode) {
  
  
 void UncaughtExceptionHandler(const e4c_exception *exception) {
-    printInfo(stderr, "\nError %s (%s)\n", exception->message, exception->name);
+    printInfo(LOG_NORMAL, stderr, 
+        "\nError %s (%s)\n", exception->message, exception->name);
     exitProgram(EXIT_UNKNOWN_ERROR);
 }
 
 
 
 void showVersion() {
-    printf("Walkera UP02 compatible firmware flasher.\n");
+    printf("Walkera UP02 compatible firmware flasher (%s).\n", ARCH);
     printf("Version %s, Copyright 2015, richard.prinz@min.at\n", VERSION);    
 }
 
@@ -51,7 +52,8 @@ void showUsage(char *prgName, int exitCode) {
     printf("-V,--version   Show version information.\n");
     printf("-v,--verbose   Enable verbose mode.\n");
     printf("-c,--config    Config file. Defaults to %s.ini\n", prgName);
-    printf("-m,--model     Use model profile from config file\n");
+    printf("-I,--info      Read board information\n");
+    printf("-P,--profile   Use model profile from config file\n");
     printf("-q,--quiet     Be quiet. Dont output anything.\n");
     printf("-i,--input     Input file to send. If omitted or '-' stdin will \n");
     printf("               be used\n");
@@ -66,6 +68,7 @@ void showUsage(char *prgName, int exitCode) {
     printf("-p,--port      Name of the port to send the encrypted output file\n");
     printf("               via XModem to. If omitted nothing will be sent\n");
     printf("-b,--baud      Baude rate to use. Defaults to 9600.\n");
+    printf("-D,--nodtr     Disable DTR control.\n");
     printf("\n");
     
     if(exitCode >= 0)
@@ -80,13 +83,13 @@ int main(int argc, const char **argv) {
     
     const char *prgName = (char *)*argv;
     char *w = NULL;
-    char wb[1024];
+    char wb[MAX_STRING];
     int l = 0;
     
     const char *argument = NULL;
     
     const char *configFileName = NULL;
-    const char *modelName = NULL;
+    const char *profileName = NULL;
     
     const char *inputFileName = NULL;
     FILE *inputFile;
@@ -101,10 +104,10 @@ int main(int argc, const char **argv) {
     char *parsedKey;
     int keyLen;
     
-    const char *port = NULL;
-    
+    const char *port = NULL;    
     int baud = 0;
-    
+    int noDTR = 0;
+        
     setbuf(stdout, NULL);
     
     
@@ -115,12 +118,14 @@ int main(int argc, const char **argv) {
         gopt_option('q', 0, gopt_shorts('q'), gopt_longs("quiet")),
         gopt_option('v', GOPT_REPEAT, gopt_shorts('v'), gopt_longs("verbose")),
         gopt_option('c', GOPT_ARG, gopt_shorts('c'), gopt_longs("config")),
-        gopt_option('m', GOPT_ARG, gopt_shorts('m'), gopt_longs("model")),
+        gopt_option('I', 0, gopt_shorts('I'), gopt_longs("info")),
+        gopt_option('P', GOPT_ARG, gopt_shorts('P'), gopt_longs("profile")),
         gopt_option('i', GOPT_ARG, gopt_shorts('i'), gopt_longs("input")),
         gopt_option('o', GOPT_ARG, gopt_shorts('o'), gopt_longs("output")),
         gopt_option('k', GOPT_ARG, gopt_shorts('k'), gopt_longs("key")),
         gopt_option('p', GOPT_ARG, gopt_shorts('p'), gopt_longs("port")),
-        gopt_option('b', GOPT_ARG, gopt_shorts('b'), gopt_longs("baud"))
+        gopt_option('b', GOPT_ARG, gopt_shorts('b'), gopt_longs("baud")),
+        gopt_option('D', 0, gopt_shorts('D'), gopt_longs("nodtr"))
     ));
 
     // get command line options
@@ -141,36 +146,56 @@ int main(int argc, const char **argv) {
 
     // get config file name    
     gopt_arg(options, 'c', &configFileName);
-    if(!configFileName) {
-        l = strlen(prgName);
-        configFileName = malloc(l + 5);
-        if(!configFileName) {
-            printError(stderr, "opening config file (%s)", configFileName);
-            exitProgram(EXIT_CONFIG_FILE_ERROR);
-        }
-        freeConfigFile = 1;
-        memset((char *)configFileName, 0, l + 5);
-        strncpy((char *)configFileName, prgName, l);
-        strncat((char *)configFileName, ".ini", 4);
-    }
-    printInfo(stdout, "Config file (%s)\n", configFileName);
+    if(!configFileName)
+        configFileName = (const char *)formatString("%s.ini", prgName);
+    printInfo(LOG_DEBUG, stdout, 
+        "Config file (%s)\n", configFileName);
     if(!fileExists((char *)configFileName)) {
-        printInfo(stdout, "Config file (%s) does not exist or is not readable - ignored\n", 
+        printInfo(LOG_INFO, stdout, 
+            "Config file (%s) does not exist or is not readable - ignored\n", 
             configFileName);
-        if(freeConfigFile)
-            free((char *)configFileName);
+        freeTableElement(configFileName);
         configFileName = NULL;
     }
 
-//throw(RuntimeException, stringFormat("opening config file (%s)", "AAAA"));
-    
-    // get model parameters
-    if(gopt_arg(options, 'm', &modelName)) {
-        printInfo(stdout, "Model (%s)\n", modelName);
-        if(get_private_profile_string(modelName, "key", NULL,
-                               &wb, 1024, configFileName)) {
-            printf("model key (%s)", wb);
+    // get profile parameters
+    if(gopt_arg(options, 'P', &profileName)) {
+        printInfo(LOG_DEBUG, stdout, 
+            "Profile (%s)\n", profileName);
+        
+        // profile input file
+        if(get_private_profile_string(profileName, "input", NULL,
+                               &wb, MAX_STRING, configFileName)) {
+            inputFileName = (const char *)cloneString(wb);
+            printInfo(LOG_DEBUG, stdout, 
+                "Profile input (%s)\n", inputFileName);
         }        
+        // profile output file
+        if(get_private_profile_string(profileName, "output", NULL,
+                               &wb, MAX_STRING, configFileName)) {
+            outputFileName = (const char *)cloneString(wb);
+            printInfo(LOG_DEBUG, stdout, 
+                "Profile input (%s)\n", outputFileName);
+        }        
+        // profile Key
+        if(get_private_profile_string(profileName, "key", NULL,
+                               &wb, MAX_STRING, configFileName)) {
+            key = (const char *)cloneString(wb);
+            printInfo(LOG_DEBUG, stdout, 
+                "Profile key (%s)\n", key);
+        }        
+        // profile port
+        if(get_private_profile_string(profileName, "port", NULL,
+                               &wb, MAX_STRING, configFileName)) {
+            port = (const char *)cloneString(wb);
+            printInfo(LOG_DEBUG, stdout, 
+                "Profile port (%s)\n", port);
+        }        
+        // profile baud
+        baud = get_private_profile_int(profileName, "baud",
+                            0, configFileName);
+        printInfo(LOG_DEBUG, stdout, 
+            "Profile baud (%d)\n", baud);
     }
     
     // get serial port
@@ -190,23 +215,24 @@ int main(int argc, const char **argv) {
         }
     }
     else {
-        printInfo(stderr, "\nError: No input file specified!\n");
+        printInfo(LOG_NORMAL, stderr, 
+            "\nError: No input file specified!\n");
         exitProgram(EXIT_INPUT_FILE_ERROR);
     }
-    printInfo(stdout, "Input file (%s)\n", inputFileName);
+    printInfo(LOG_DEBUG, stdout, 
+        "Input file (%s)\n", inputFileName);
 
     // get output file name
     gopt_arg(options, 'o', &outputFileName);
-    if(!outputFileName) {
+    if(!outputFileName)
         // create temp file as output file
         outputFileName = getTempFile("");
-        freeTempFile = 1;
-    }
     
     if(outputFileName) {
         if(!strcmp(outputFileName, "-")) {
             if(port) {
-                printInfo(stderr, "\nError: stdout as output file can only be specified without port.\n");
+                printInfo(LOG_NORMAL, stderr, 
+                    "\nError: stdout as output file can only be specified without port.\n");
                 exitProgram(EXIT_OUTPUT_FILE_ERROR);
             }
             outputFile = stdout;
@@ -219,15 +245,17 @@ int main(int argc, const char **argv) {
             exitProgram(EXIT_OUTPUT_FILE_ERROR);
         }
     }
-    printInfo(stdout, "Output file (%s)\n", outputFileName);
+    printInfo(LOG_DEBUG, stdout, 
+        "Output file (%s)\n", outputFileName);
 
     // get key
     gopt_arg(options, 'k', &key);
     if(key) {
         parsedKey = (char *)parseKey(key, &keyLen);
-        printInfo(stdout, "Encrypt input file with key (hex dump follows):\n");
-        show_dump(parsedKey, keyLen, stderr);        
-        printInfo(stdout, "Key: %s\n", key);
+        printInfo(LOG_INFO, stdout, 
+            "Encrypt input file with key (hex dump follows):\n");
+        show_dump(LOG_INFO, stdout, parsedKey, keyLen);        
+        printInfo(LOG_DEBUG, stdout, "Key: %s\n", key);
     }
     else {
         // create dummy key which does nothing
@@ -235,55 +263,94 @@ int main(int argc, const char **argv) {
         keyLen = 1;
     }
     
+    // serial baud
     if(gopt_arg(options, 'b', &argument)) {
         baud = (int)strtol(argument, &w, 0);
         if(w == argument) {
-            printInfo(stderr, "\nError: (%s) invalid baud rate\n", argument);
+            printInfo(LOG_NORMAL, stderr, 
+                "\nError: (%s) invalid baud rate\n", argument);
             exitProgram(EXIT_BAUD_ERROR);
         }
     }
-    else
+    if(baud <= 0)
         baud = 9600;
+
+    // DTR handling
+    noDTR = gopt(options, 'D');
 
     // done with processing command line arguments
     gopt_free(options);
 
+    // -----------------------------------------------------------------------------
 
-
-
-
-    xorFile(inputFile, outputFile, parsedKey, keyLen);
-    
-    if(inputFile != stdin)
-        fclose(inputFile);
+    try {
+        xorFile(inputFile, outputFile, parsedKey, keyLen);
+    }
+    catch(RuntimeException) {
+        const e4c_exception *exception = e4c_get_exception();
+        e4c_print_exception(exception);
+        return(EXIT_UNKNOWN_ERROR);
+    }
+    finally {        
+        if(inputFile != stdin)
+            fclose(inputFile);
         
-    if(outputFile != stdout)
-        fclose(outputFile);
+        if(outputFile != stdout)
+            fclose(outputFile);
+    }
             
     if(port) {
-        int st;
-        
+        // open serial port
+        printInfo(LOG_NORMAL, stdout,
+            "\nTry to connect to walkera receiver: ");
         HANDLE portHandle = _openPort(port, baud);
-        
-        /* the following should be changed for your environment:
-        0x30000 is the download address,
-        12000 is the maximum size to be send from this address
-        */
-        st = xmodemTransmit((char *)0x30000, 12000);
-        if (st < 0) {
-            printf ("Xmodem transmit error: status: %d\n", st);
+        if(portHandle == INVALID_HANDLE_VALUE) {
+            printError(stderr, "opening port (%s)", port);
+            exitProgram(EXIT_COMM_ERROR);
         }
-        else {
-            printf ("Xmodem successfully transmitted %d bytes\n", st);
-        }  
+
+        // reset board via serial DTR low
+        if(!noDTR) {
+            if(_setDTR(portHandle, 1))
+                printInfo(LOG_NORMAL, stderr,
+                    "\nUnable to clear DTR\n");
+            Sleep(1000);
+            if(_setDTR(portHandle, 0))
+                printInfo(LOG_NORMAL, stderr,
+                    "\nUnable to set DTR\n");
+        }
         
+        // connect to board bootloader
+        int isConnected = connect(portHandle, 10000, 1);
+        if(!isConnected) {
+            printInfo(LOG_NORMAL, stderr, 
+                "\nError unable to connect on port (%s)\n", port);
+            exitProgram(EXIT_COMM_ERROR);
+        }
+        printInfo(LOG_NORMAL, stdout,
+            "\n");
+        
+        // query board info
+        if(getInfo(portHandle, 10000, &wb, MAX_STRING) < 0)
+            printInfo(LOG_NORMAL, stderr,
+                "Warning unable to identify receiver board\n");
+        else
+            printInfo(LOG_NORMAL, stdout,
+                "Connected to: %s\n", wb);        
+
+        // flash firmware
+        l = flash(portHandle, 10000, outputFileName);
+        if(l < 0)
+            printInfo(LOG_NORMAL, stderr,
+                "Warning unable to flash board\n");
+        else
+            printInfo(LOG_NORMAL, stdout,
+                "%d bytes flashed\n", l);        
+                        
+        // close port  
+        disconnect(portHandle);      
         _closePort(portHandle);              
     }
     
-    if(freeConfigFile)
-        free((char *)configFileName);
-    if(freeTempFile)
-        free((char *)outputFileName);
-        
-    e4c_context_end();
+    exitProgram(EXIT_OK);   
 }

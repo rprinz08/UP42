@@ -29,10 +29,12 @@ Usage:
 */
 
 #include <string.h>
+#include "up02c.h"
 
+extern int verbosity;
+extern int quiet;
 
-
-void show_dump(unsigned char *data, unsigned int len, FILE *stream) {
+void show_dump(int level, FILE *stream, unsigned char *data, unsigned int len) {
     const static char       hex[] = "0123456789abcdef";
     static unsigned char    buff[67];   /* HEX  CHAR\n */
     unsigned char           chr,
@@ -40,6 +42,8 @@ void show_dump(unsigned char *data, unsigned int len, FILE *stream) {
                             *p,
                             *limit,
                             *glimit = data + len;
+	if(verbosity < level || quiet)
+		return;
 
     memset(buff + 2, ' ', 48);
 

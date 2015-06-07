@@ -33,8 +33,15 @@
      void _outbyte(int c);
 
  */
+ 
+#include <stdio.h>
+#include <stdarg.h>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 #include "crc16.h"
+#include "up02c.h"
 
 #define SOH  0x01
 #define STX  0x02
@@ -70,8 +77,8 @@ static int check(int crc, const unsigned char *buf, int sz)
 
 static void flushinput(void)
 {
-	while (_inbyte(((DLY_1S)*3)>>1) >= 0)
-		;
+	//while (_inbyte(((DLY_1S)*3)>>1) >= 0)
+	//	;
 }
 
 int xmodemReceive(unsigned char *dest, int destsz)
@@ -164,6 +171,7 @@ int xmodemTransmit(unsigned char *src, int srcsz)
 	unsigned char packetno = 1;
 	int i, c, len = 0;
 	int retry;
+	double x;
 
 	for(;;) {
 		for( retry = 0; retry < 16; ++retry) {
@@ -195,6 +203,11 @@ int xmodemTransmit(unsigned char *src, int srcsz)
 
 		for(;;) {
 		start_trans:
+			
+x = ((double)len / srcsz) * 100;
+//printf("Sent: %d from %d (%.2f%%)\n", len, srcsz, (x > 100.0 ? 100 : x));
+printInfo(LOG_NORMAL, stdout, "Sent %.2f%%    \r", (x > 100.0 ? 100 : x));
+		
 			xbuff[0] = SOH; bufsz = 128;
 			xbuff[1] = packetno;
 			xbuff[2] = ~packetno;
