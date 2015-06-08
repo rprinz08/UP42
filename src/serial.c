@@ -7,7 +7,7 @@
 
 HANDLE _portHandle = INVALID_HANDLE_VALUE;
 
-HANDLE _openPort(const char *portName, int baud) {
+HANDLE _openPort(const char *portName, int baud, unsigned char dataBits, unsigned char parity) {
 	int i; 
 	DCB dcb = { 0 }; 
 	//char *portName = "\\\\.\\COM13"; 
@@ -21,9 +21,9 @@ HANDLE _openPort(const char *portName, int baud) {
 	dcb.DCBlength = sizeof(dcb); 
 	dcb.BaudRate = baud; 
 	dcb.fBinary = 1; 
-	dcb.Parity = NOPARITY; 
+	dcb.Parity = parity; 
 	dcb.StopBits = ONESTOPBIT; 
-	dcb.ByteSize = 8; 
+	dcb.ByteSize = dataBits; 
 	
 	if(!SetCommState(h, &dcb)) 
 		return INVALID_HANDLE_VALUE;

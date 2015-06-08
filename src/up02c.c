@@ -68,6 +68,9 @@ void showUsage(char *prgName, int exitCode) {
     printf("-p,--port      Name of the port to send the encrypted output file\n");
     printf("               via XModem to. If omitted nothing will be sent\n");
     printf("-b,--baud      Baude rate to use. Defaults to 9600.\n");
+    printf("-1,-2          1 or 2 stop bits\n");
+    printf("-7,-8          7 or 8 data bits\n");
+    printf("-N,-E,-O       No, Even or Odd parity\n");
     printf("-D,--nodtr     Disable DTR control.\n");
     printf("\n");
     
@@ -105,7 +108,10 @@ int main(int argc, const char **argv) {
     int keyLen;
     
     const char *port = NULL;    
-    int baud = 0;
+    int baud = 9600;
+    char parity = NOPARITY;
+    int dataBits = 8;
+    int stopBits = ONESTOPBIT;
     int noDTR = 0;
         
     setbuf(stdout, NULL);
@@ -125,6 +131,13 @@ int main(int argc, const char **argv) {
         gopt_option('k', GOPT_ARG, gopt_shorts('k'), gopt_longs("key")),
         gopt_option('p', GOPT_ARG, gopt_shorts('p'), gopt_longs("port")),
         gopt_option('b', GOPT_ARG, gopt_shorts('b'), gopt_longs("baud")),
+        gopt_option('1', 0, gopt_shorts('1'), gopt_longs("1")),
+        gopt_option('2', 0, gopt_shorts('2'), gopt_longs("2")),
+        gopt_option('7', 0, gopt_shorts('7'), gopt_longs("7")),
+        gopt_option('8', 0, gopt_shorts('8'), gopt_longs("8")),
+        gopt_option('N', 0, gopt_shorts('N'), gopt_longs("none")),
+        gopt_option('E', 0, gopt_shorts('E'), gopt_longs("even")),
+        gopt_option('O', 0, gopt_shorts('O'), gopt_longs("odd")),
         gopt_option('D', 0, gopt_shorts('D'), gopt_longs("nodtr"))
     ));
 
@@ -140,10 +153,19 @@ int main(int argc, const char **argv) {
     
     // get verbosity level
     verbosity = gopt(options, 'v');
+    printInfo(LOG_DEBUG, stdout, 
+        "Verbosity (%d)\n", verbosity);
 
     // check if we should be quiet
     quiet = gopt(options, 'q');
+    printInfo(LOG_DEBUG, stdout, 
+        "Quiet (%d)\n", quiet);
 
+    // DTR handling
+    noDTR = gopt(options, 'D');
+    printInfo(LOG_DEBUG, stdout, 
+        "No DTR handling (%d)\n", noDTR);
+    
     // get config file name    
     gopt_arg(options, 'c', &configFileName);
     if(!configFileName)
@@ -161,45 +183,69 @@ int main(int argc, const char **argv) {
     // get profile parameters
     if(gopt_arg(options, 'P', &profileName)) {
         printInfo(LOG_DEBUG, stdout, 
-            "Profile (%s)\n", profileName);
+            "---------- Profile (%s) ----------\n", profileName);
         
         // profile input file
         if(get_private_profile_string(profileName, "input", NULL,
                                &wb, MAX_STRING, configFileName)) {
             inputFileName = (const char *)cloneString(wb);
             printInfo(LOG_DEBUG, stdout, 
-                "Profile input (%s)\n", inputFileName);
+                "Input file (%s)\n", inputFileName);
         }        
         // profile output file
         if(get_private_profile_string(profileName, "output", NULL,
                                &wb, MAX_STRING, configFileName)) {
             outputFileName = (const char *)cloneString(wb);
             printInfo(LOG_DEBUG, stdout, 
-                "Profile input (%s)\n", outputFileName);
+                "Output file (%s)\n", outputFileName);
         }        
         // profile Key
         if(get_private_profile_string(profileName, "key", NULL,
                                &wb, MAX_STRING, configFileName)) {
             key = (const char *)cloneString(wb);
             printInfo(LOG_DEBUG, stdout, 
-                "Profile key (%s)\n", key);
+                "Key (%s)\n", key);
         }        
         // profile port
         if(get_private_profile_string(profileName, "port", NULL,
                                &wb, MAX_STRING, configFileName)) {
             port = (const char *)cloneString(wb);
             printInfo(LOG_DEBUG, stdout, 
-                "Profile port (%s)\n", port);
+                "Serial port (%s)\n", port);
         }        
         // profile baud
         baud = get_private_profile_int(profileName, "baud",
                             0, configFileName);
         printInfo(LOG_DEBUG, stdout, 
-            "Profile baud (%d)\n", baud);
+            "Serial baud (%d)\n", baud);
+        // profile parity
+        parity = get_private_profile_int(profileName, "parity",
+                            0, configFileName);
+        printInfo(LOG_DEBUG, stdout, 
+            "Serial parity (%d)\n", parity);
+        // profile databits
+        dataBits = get_private_profile_int(profileName, "dataBits",
+                            0, configFileName);
+        printInfo(LOG_DEBUG, stdout, 
+            "Serial data bits (%d)\n", dataBits);
+        // profile stopbits
+        stopBits = get_private_profile_int(profileName, "stopBits",
+                            0, configFileName);
+        printInfo(LOG_DEBUG, stdout, 
+            "Serial stop bits (%d)\n", stopBits);
+            
+        printInfo(LOG_DEBUG, stdout, 
+            "---------- End of profile ----------\n");            
     }
+    
+    
+    printInfo(LOG_DEBUG, stdout, 
+        "---------- Actual values ----------\n");            
     
     // get serial port
     gopt_arg(options, 'p', &port);
+    printInfo(LOG_DEBUG, stdout, 
+        "Serial port (%s)\n", port);
 
     // get input file name    
     gopt_arg(options, 'i', &inputFileName);
@@ -251,13 +297,14 @@ int main(int argc, const char **argv) {
     // get key
     gopt_arg(options, 'k', &key);
     if(key) {
+        printInfo(LOG_DEBUG, stdout, "Key: %s\n", key);
         parsedKey = (char *)parseKey(key, &keyLen);
         printInfo(LOG_INFO, stdout, 
             "Encrypt input file with key (hex dump follows):\n");
         show_dump(LOG_INFO, stdout, parsedKey, keyLen);        
-        printInfo(LOG_DEBUG, stdout, "Key: %s\n", key);
     }
     else {
+        printInfo(LOG_DEBUG, stdout, "No key\n");
         // create dummy key which does nothing
         parsedKey = "\0";
         keyLen = 1;
@@ -274,9 +321,33 @@ int main(int argc, const char **argv) {
     }
     if(baud <= 0)
         baud = 9600;
+    printInfo(LOG_DEBUG, stdout, 
+        "Serial baud (%d)\n", baud);
 
-    // DTR handling
-    noDTR = gopt(options, 'D');
+    // serial parity
+    parity = (gopt(options, 'N') ? NOPARITY : parity); 
+    parity = (gopt(options, 'E') ? EVENPARITY : parity); 
+    parity = (gopt(options, 'O') ? ODDPARITY : parity); 
+    printInfo(LOG_DEBUG, stdout, 
+        "Serial parity (%d)\n", parity);
+
+    // serial data bits
+    dataBits = (dataBits > 0 ? dataBits : 8);
+    dataBits = (gopt(options, '7') ? 7 : dataBits); 
+    dataBits = (gopt(options, '8') ? 8 : dataBits); 
+    printInfo(LOG_DEBUG, stdout, 
+        "Serial data bits (%d)\n", dataBits);
+    
+    // serial stop bits
+    stopBits = (gopt(options, '1') ? ONESTOPBIT : stopBits); 
+    stopBits = (gopt(options, '2') ? TWOSTOPBITS : stopBits); 
+    printInfo(LOG_DEBUG, stdout, 
+        "Serial stop bits (%d)\n", stopBits);
+    
+
+
+    printInfo(LOG_DEBUG, stdout, 
+        "---------- End of actual values ----------\n");            
 
     // done with processing command line arguments
     gopt_free(options);
@@ -301,14 +372,27 @@ int main(int argc, const char **argv) {
             
     if(port) {
         // open serial port
-        printInfo(LOG_NORMAL, stdout,
-            "\nTry to connect to walkera receiver: ");
-        HANDLE portHandle = _openPort(port, baud);
+        HANDLE portHandle = _openPort(port, baud, dataBits, parity);
         if(portHandle == INVALID_HANDLE_VALUE) {
             printError(stderr, "opening port (%s)", port);
             exitProgram(EXIT_COMM_ERROR);
         }
+        printInfo(LOG_DEBUG, stdout, 
+            "Serial port (%s) opend (%d,%c,%d,%s)\n", 
+                port, baud,
+                (parity == NOPARITY ? 'N' :
+                    (parity == ODDPARITY ? 'O' :
+                        (parity == EVENPARITY ? 'E' :
+                            (parity == MARKPARITY ? 'M' :
+                                (parity == 'S' ? 'S' : '-'))))),
+                dataBits,
+                (stopBits == 0 ? "1" :
+                    (stopBits == 1 ? "1.5" :
+                        (stopBits == 2 ? "2" : "-"))));
 
+        printInfo(LOG_NORMAL, stdout,
+            "\nTry to connect to walkera receiver: ");
+            
         // reset board via serial DTR low
         if(!noDTR) {
             if(_setDTR(portHandle, 1))
