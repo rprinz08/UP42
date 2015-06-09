@@ -8,14 +8,17 @@
 #include <windows.h>
 #endif
 
+#include "up02c.h"
 #include "e4c.h"
 #include "gopt.h"
-#include "show_dump.h"
-#include "up02c.h"
+#include "ini.h"
+#include "xor.h"
+#include "serial.h"
+#include "walkera.h"
+#include "tools.h"
 
 int verbosity = 0;
 int quiet = 0;
-char *emptyString = "";
 
 
 void exitProgram(int exitCode) {
@@ -176,7 +179,7 @@ int main(int argc, const char **argv) {
         printInfo(LOG_INFO, stdout, 
             "Config file (%s) does not exist or is not readable - ignored\n", 
             configFileName);
-        freeTableElement(configFileName);
+        freeTableElement((void *)configFileName);
         configFileName = NULL;
     }
 
@@ -187,28 +190,28 @@ int main(int argc, const char **argv) {
         
         // profile input file
         if(get_private_profile_string(profileName, "input", NULL,
-                               &wb, MAX_STRING, configFileName)) {
+                               (char *)&wb, MAX_STRING, configFileName)) {
             inputFileName = (const char *)cloneString(wb);
             printInfo(LOG_DEBUG, stdout, 
                 "Input file (%s)\n", inputFileName);
         }        
         // profile output file
         if(get_private_profile_string(profileName, "output", NULL,
-                               &wb, MAX_STRING, configFileName)) {
+                               (char *)&wb, MAX_STRING, configFileName)) {
             outputFileName = (const char *)cloneString(wb);
             printInfo(LOG_DEBUG, stdout, 
                 "Output file (%s)\n", outputFileName);
         }        
         // profile Key
         if(get_private_profile_string(profileName, "key", NULL,
-                               &wb, MAX_STRING, configFileName)) {
+                               (char *)&wb, MAX_STRING, configFileName)) {
             key = (const char *)cloneString(wb);
             printInfo(LOG_DEBUG, stdout, 
                 "Key (%s)\n", key);
         }        
         // profile port
         if(get_private_profile_string(profileName, "port", NULL,
-                               &wb, MAX_STRING, configFileName)) {
+                               (char *)&wb, MAX_STRING, configFileName)) {
             port = (const char *)cloneString(wb);
             printInfo(LOG_DEBUG, stdout, 
                 "Serial port (%s)\n", port);
@@ -298,10 +301,10 @@ int main(int argc, const char **argv) {
     gopt_arg(options, 'k', &key);
     if(key) {
         printInfo(LOG_DEBUG, stdout, "Key: %s\n", key);
-        parsedKey = (char *)parseKey(key, &keyLen);
+        parsedKey = parseKey((char *)key, &keyLen);
         printInfo(LOG_INFO, stdout, 
             "Encrypt input file with key (hex dump follows):\n");
-        show_dump(LOG_INFO, stdout, parsedKey, keyLen);        
+        showDump(LOG_INFO, stdout, parsedKey, keyLen);        
     }
     else {
         printInfo(LOG_DEBUG, stdout, "No key\n");
@@ -372,7 +375,7 @@ int main(int argc, const char **argv) {
             
     if(port) {
         // open serial port
-        HANDLE portHandle = _openPort(port, baud, dataBits, parity);
+        HANDLE portHandle = serial_openPort(port, baud, dataBits, parity);
         if(portHandle == INVALID_HANDLE_VALUE) {
             printError(stderr, "opening port (%s)", port);
             exitProgram(EXIT_COMM_ERROR);
@@ -395,11 +398,11 @@ int main(int argc, const char **argv) {
             
         // reset board via serial DTR low
         if(!noDTR) {
-            if(_setDTR(portHandle, 1))
+            if(serial_setDTR(portHandle, 1))
                 printInfo(LOG_NORMAL, stderr,
                     "\nUnable to clear DTR\n");
             Sleep(1000);
-            if(_setDTR(portHandle, 0))
+            if(serial_setDTR(portHandle, 0))
                 printInfo(LOG_NORMAL, stderr,
                     "\nUnable to set DTR\n");
         }
@@ -415,7 +418,7 @@ int main(int argc, const char **argv) {
             "\n");
         
         // query board info
-        if(getInfo(portHandle, 10000, &wb, MAX_STRING) < 0)
+        if(getInfo(portHandle, 10000, (char *)&wb, MAX_STRING) < 0)
             printInfo(LOG_NORMAL, stderr,
                 "Warning unable to identify receiver board\n");
         else
@@ -433,7 +436,7 @@ int main(int argc, const char **argv) {
                         
         // close port  
         disconnect(portHandle);      
-        _closePort(portHandle);              
+        serial_closePort(portHandle);              
     }
     
     exitProgram(EXIT_OK);   

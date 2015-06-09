@@ -3,12 +3,16 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <ctype.h>
+
 #ifdef _WIN32
 #include <windows.h>
 #endif
-#include "up02c.h"
 
-#define POLL_TIME		500
+#include "walkera.h"
+#include "serial.h"
+#include "xmodem.h"
+#include "tools.h"
+#include "up02c.h"
 
 int connect(HANDLE portHandle, int timeoutMs, char showStatus) {
 	char inb = 0;
@@ -16,8 +20,8 @@ int connect(HANDLE portHandle, int timeoutMs, char showStatus) {
 	unsigned long tx = getMs() + t;
 	
 	while(inb != '>' && getMs() < tx) {
-		_outbyte('D');
-		inb = _inbyte(POLL_TIME);
+		serial_outByte(portHandle, 'D');
+		inb = serial_inByte(portHandle, POLL_TIME);
 		if(verbosity < LOG_COMM)
 			printInfo(LOG_NORMAL, stdout, ".");
 	}
@@ -26,7 +30,7 @@ int connect(HANDLE portHandle, int timeoutMs, char showStatus) {
 }
 
 void disconnect(HANDLE portHandle) {
-	_outbyte('Q');
+	serial_outByte(portHandle, 'Q');
 }
 
 int getInfo(HANDLE portHandle, int timeoutMs, char *buffer, int buffer_size) {
@@ -36,8 +40,8 @@ int getInfo(HANDLE portHandle, int timeoutMs, char *buffer, int buffer_size) {
 	unsigned long tx = getMs() + t;
 	
 	while(inb == '>' && getMs() < tx) {
-		_outbyte('I');
-		inb = _inbyte(POLL_TIME);
+		serial_outByte(portHandle, 'I');
+		inb = serial_inByte(portHandle, POLL_TIME);
 	}
 	
 	if(getMs() > tx)
@@ -50,7 +54,7 @@ int getInfo(HANDLE portHandle, int timeoutMs, char *buffer, int buffer_size) {
 	return st;
 }
 
-int flash(HANDLE portHandle, int timeoutMs, char *fileName) {
+int flash(HANDLE portHandle, int timeoutMs, const char *fileName) {
 	int st;
     struct stat xstat;
     char *buffer;
@@ -63,7 +67,7 @@ int flash(HANDLE portHandle, int timeoutMs, char *fileName) {
         fclose(fd);
     }
 
-	_outbyte('F');
+	serial_outByte(portHandle, 'F');
 	Sleep(200);
 	
 	st = xmodemTransmit(buffer, xstat.st_size);

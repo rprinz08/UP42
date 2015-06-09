@@ -12,8 +12,8 @@
  *     * Neither the name of the University of California, Berkeley nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND ANY
+ *  
+ * THIS SOFTW ARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS AND CONTRIBUTORS BE LIABLE FOR ANY
@@ -23,7 +23,7 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+ */ 
 
 /* this code needs standard functions memcpy() and memset()
    and input/output functions _inbyte() and _outbyte().
@@ -36,23 +36,17 @@
  
 #include <stdio.h>
 #include <stdarg.h>
+
 #ifdef _WIN32
 #include <windows.h>
 #endif
 
+#include "xmodem.h"
 #include "crc16.h"
+#include "serial.h"
+#include "tools.h"
 #include "up02c.h"
 
-#define SOH  0x01
-#define STX  0x02
-#define EOT  0x04
-#define ACK  0x06
-#define NAK  0x15
-#define CAN  0x18
-#define CTRLZ 0x1A
-
-#define DLY_1S 1000
-#define MAXRETRANS 25
 
 static int check(int crc, const unsigned char *buf, int sz)
 {

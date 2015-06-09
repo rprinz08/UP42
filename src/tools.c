@@ -1,11 +1,16 @@
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
+
 #ifdef _WIN32
 #include <windows.h>
 #endif
 
+#include "tools.h"
 #include "e4c.h"
 #include "up02c.h"
+
+char *emptyString = "";
 
 struct s_freeTableEntry {
 	char *element;
@@ -18,7 +23,7 @@ freeTableEntry *freeTable = NULL;
 /*------------------------------------------------------------
         checks if a file exists and is readable
   ------------------------------------------------------------*/
-int fileExists(char *s) {
+int fileExists(const char *s) {
 	FILE *f;
 
 	if((f=fopen(s,"r")) != NULL) {
@@ -101,7 +106,7 @@ void freeAllTable() {
 	}
 }
 
-char *cloneString(char *s) {
+char *cloneString(const char *s) {
 	int l = 0;
 	char *clone = NULL;
 	
@@ -221,3 +226,41 @@ char *getTempFile(char *prefix) {
 	return tempFileName;
 }
 #endif
+
+void showDump(int level, FILE *stream, unsigned char *data, unsigned int len) {
+    const static char       hex[] = "0123456789abcdef";
+    static unsigned char    buff[67];   /* HEX  CHAR\n */
+    unsigned char           chr,
+                            *bytes,
+                            *p,
+                            *limit,
+                            *glimit = data + len;
+	if(verbosity < level || quiet)
+		return;
+
+    memset(buff + 2, ' ', 48);
+
+    while(data < glimit) {
+        limit = data + 16;
+        if(limit > glimit) {
+            limit = glimit;
+            memset(buff, ' ', 48);
+        }
+
+        p     = buff;
+        bytes = p + 50;
+        while(data < limit) {
+            chr = *data;
+            *p++ = hex[chr >> 4];
+            *p++ = hex[chr & 15];
+            p++;
+            *bytes++ = ((chr < ' ') || (chr >= 0x7f)) ? '.' : chr;
+            data++;
+        }
+        *bytes++ = '\n';
+
+        fwrite(buff, bytes - buff, 1, stream);
+    }
+}
+
+

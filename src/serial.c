@@ -1,21 +1,27 @@
 
 #include <stdio.h> 
-#include <stdlib.h> 
+#include <stdlib.h>
+
+#ifdef _WIN32 
 #include <windows.h>
+#endif
 
 #include "up02c.h"
+#include "serial.h"
+#include "tools.h"
 
 HANDLE _portHandle = INVALID_HANDLE_VALUE;
 
-HANDLE _openPort(const char *portName, int baud, unsigned char dataBits, unsigned char parity) {
+HANDLE serial_openPort(const char *portName, int baud, 
+		unsigned char dataBits, unsigned char parity) {
 	int i; 
 	DCB dcb = { 0 }; 
 	//char *portName = "\\\\.\\COM13"; 
 	
-	HANDLE h = CreateFile(portName, 
+	HANDLE portHandle = CreateFile(portName, 
 		GENERIC_READ | GENERIC_WRITE, 
 		0, NULL, OPEN_EXISTING, 0, NULL); 
-	if(h == INVALID_HANDLE_VALUE) 
+	if(portHandle == INVALID_HANDLE_VALUE) 
 		return INVALID_HANDLE_VALUE; 
 	 
 	dcb.DCBlength = sizeof(dcb); 
@@ -25,20 +31,23 @@ HANDLE _openPort(const char *portName, int baud, unsigned char dataBits, unsigne
 	dcb.StopBits = ONESTOPBIT; 
 	dcb.ByteSize = dataBits; 
 	
-	if(!SetCommState(h, &dcb)) 
+	if(!SetCommState(portHandle, &dcb)) 
 		return INVALID_HANDLE_VALUE;
-	//_setDTR(h, 1);		
 
-	_portHandle = h;
-	return h;
+	_portHandle = portHandle;
+	return portHandle;
 }
 
-void _closePort(HANDLE h) {
-	CloseHandle(h);
+void serial_closePort(HANDLE portHandle) {
+	CloseHandle(portHandle);
 	_portHandle = INVALID_HANDLE_VALUE;
 }
 
 int _inbyte(unsigned short timeout) {
+	return serial_inByte(_portHandle, timeout);
+}
+
+int serial_inByte(HANDLE portHandle, unsigned short timeout) {
 	unsigned char ch = 0; 
 	DWORD read = 0; 	
 	COMMTIMEOUTS timeouts;
@@ -48,10 +57,10 @@ int _inbyte(unsigned short timeout) {
     timeouts.ReadTotalTimeoutConstant = timeout;
     timeouts.WriteTotalTimeoutMultiplier = 0;
     timeouts.WriteTotalTimeoutConstant = 0;
-    if(!SetCommTimeouts(_portHandle, &timeouts))
+    if(!SetCommTimeouts(portHandle, &timeouts))
         printError(stderr, "setting port time-outs");	
 	
-	ReadFile(_portHandle, &ch, 1, &read, NULL); 
+	ReadFile(portHandle, &ch, 1, &read, NULL); 
 	printInfo(LOG_COMM, stdout,
 		"< %3d %c 0x%02x\n", read, (ch < 31 ? '.' : ch), ch);
 	
@@ -61,13 +70,17 @@ int _inbyte(unsigned short timeout) {
 }
 
 void _outbyte(int c) {
-	char ch = (char)c;
+	serial_outByte(_portHandle, (unsigned char)c);
+}
+
+void serial_outByte(HANDLE portHandle, unsigned char c) {
+	unsigned char ch = c;
 	DWORD written = 0;
-	WriteFile(_portHandle, &ch, 1, &written, NULL);
+	WriteFile(portHandle, &ch, 1, &written, NULL);
 	printInfo(LOG_COMM, stdout,
 		"> %c 0x%02x\n", (ch < 31 ? '.' : ch), ch);
 }
 
-int _setDTR(HANDLE _portHandle, char DTR) {
-	return (!EscapeCommFunction(_portHandle, (DTR ? SETDTR : CLRDTR)));
+int serial_setDTR(HANDLE portHandle, unsigned char DTR) {
+	return (!EscapeCommFunction(portHandle, (DTR ? SETDTR : CLRDTR)));
 }

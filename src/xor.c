@@ -9,10 +9,10 @@
 #include <windows.h>
 #endif
 
+#include "xor.h"
 #include "e4c.h"
+#include "tools.h"
 #include "up02c.h"
-
-#define BUFFER_SIZE  8192
 
 
 
@@ -78,22 +78,22 @@ char *parseKey(char *key, int *keyLen) {
 
 
 
-void xorFile(FILE *inz, FILE *outz, char *key, int keyLen) {
+void xorFile(FILE *inputFile, FILE *outputFile, const char *key, int keyLen) {
     int len;
     char *buff, *p, *l, *k, *kl;
             
-    k = key;
-    kl = key + keyLen;
+    k = (char *)key;
+    kl = (char *)key + keyLen;
     buff = createString(BUFFER_SIZE + 1);
     
-    while((len = fread(buff, 1, BUFFER_SIZE, inz))) {
+    while((len = fread(buff, 1, BUFFER_SIZE, inputFile))) {
         for(p = buff, l = buff + len; p != l; p++, k++) {
             if(k == kl)
-                k = key;
+                k = (char *)key;
             *p ^= *k;
         }
 
-        if(fwrite(buff, len, 1, outz) != 1) {
+        if(fwrite(buff, len, 1, outputFile) != 1) {
             fprintf(stderr, "\nError: write error, probably the disk space is finished\n");
             exit(1);
         }
@@ -104,7 +104,7 @@ void xorFile(FILE *inz, FILE *outz, char *key, int keyLen) {
 
 
 
-int xor(char *inputFileName, char *outputFileName, char *key) {
+int xor(const char *inputFileName, const char *outputFileName, char *key) {
     FILE *inputFile, *outputFile;
     int keyLen;
     char *parsedKey;

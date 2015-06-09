@@ -38,8 +38,8 @@ int read_line(FILE *fp, char *bp)
 *               <char *> file_name - the name of the .ini file to read from
 * Returns:      the value located at entry
 ***************************************************************************/
-int get_private_profile_int(char *section, char *entry,
-                            int def, char *file_name)
+int get_private_profile_int(const char *section, const char *entry,
+                            int def, const char *file_name)
 {
     FILE *fp = fopen(file_name,"r");
     char buff[INI_MAX_LINE_LENGTH];
@@ -92,8 +92,8 @@ int get_private_profile_int(char *section, char *entry,
 *               <char *> file_name - the name of the .ini file to read from
 * Returns:      the number of characters copied into the supplied buffer
 ***************************************************************************/
-int get_private_profile_string(char *section, char *entry, char *def,
-                               char *buffer, int buffer_len, char *file_name)
+int get_private_profile_string(const char *section, const char *entry, char *def,
+                               char *buffer, int buffer_len, const char *file_name)
 {
     FILE *fp = fopen(file_name,"r");
     char buff[INI_MAX_LINE_LENGTH];

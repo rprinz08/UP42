@@ -3,8 +3,7 @@
 
 #define INI_MAX_LINE_LENGTH    80
 
-extern int get_private_profile_int(char *, char *, int, char *);
-extern int get_private_profile_string(char *, char *, char *, char *, int, char *);
-extern int write_private_profile_string(char *, char *, char *, char *);
+extern int get_private_profile_int(const char *, const char *, int, const char *);
+extern int get_private_profile_string(const char *, const char *, char *, char *, int, const char *);
 
 #endif

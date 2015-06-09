@@ -11,42 +11,9 @@
 #define EXIT_COMM_ERROR				7
 #define EXIT_UNKNOWN_ERROR			9
 
-#define LOG_NORMAL					0
-#define LOG_INFO					1
-#define LOG_DEBUG					3
-#define LOG_MEM						4
-#define LOG_COMM					5
-
 #define VERSION     				"0.2"
-#define MAX_STRING					1024
-
-#ifndef _WIN32
-#define NOPARITY 0
-#define ODDPARITY 1
-#define EVENPARITY 2
-#define MARKPARITY 3
-#define SPACEPARITY 4
-
-#define ONESTOPBIT 0
-#define ONE5STOPBITS 1
-#define TWOSTOPBITS 2
-#endif
 
 extern int verbosity;
 extern int quiet;
-extern char *emptyString;
-
-extern int fileExists(char *s);
-extern char *createString(int len);
-extern char *formatString(const char *message, ...);
-extern void printInfo(int level, FILE *file, const char *message, ...);
-extern void printError(FILE *file, const char *message, ...);
-extern char *getTempFile(char *prefix);
-
-extern HANDLE _openPort(const char *port, int baud, unsigned char dataBits, unsigned char parity);
-extern int _inbyte(unsigned short timeout); // msec timeout
-extern void _outbyte(int c);
-extern void _closePort(HANDLE h);
-extern int rxTest(void);
 
 #endif

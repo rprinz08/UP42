@@ -1,12 +1,12 @@
 {
     "version": "0.1.0",
-    "command": "build.bat",
+    "command": "build.cmd",
     "args": [
     ],
     "tasks": [
         {
-            "taskName": "build 32",
-            "args": [ "build-32.bat" ],
+            "taskName": "make 32",
+            "args": [ "ia32", "all" ],
             "problemMatcher": {
                 "owner": "cpp",
                 "fileLocation": ["relative", "${workspaceRoot}"],
@@ -20,8 +20,12 @@
             }    
         },
         {
-            "taskName": "build 64",
-            "args": [ "build-64.bat" ],
+            "taskName": "clean 32",
+            "args": [ "ia32", "clean" ]
+        },
+        {
+            "taskName": "make 64",
+            "args": [ "ia64", "all" ],
             "problemMatcher": {
                 "owner": "cpp",
                 "fileLocation": ["relative", "${workspaceRoot}"],
@@ -33,6 +37,10 @@
                     "message": 4
                 }
             }    
+        },
+        {
+            "taskName": "clean 64",
+            "args": [ "ia64", "clean" ]
         }
     ]
 }
