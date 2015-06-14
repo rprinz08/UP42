@@ -152,7 +152,7 @@ HANDLE serial_openPort(const char *portName, int baud,
 		return INVALID_HANDLE_VALUE;
 
 	// save current port settings
-	tcgetattr(fd, &oldtio);
+	tcgetattr(_portHandle, &oldtio);
 
 	// set new port settings for canonical input processing 
 	newtio.c_cflag = BAUD | CRTSCTS | DATABITS | STOPBITS | PARITYON | PARITY | CLOCAL | CREAD;
@@ -161,22 +161,22 @@ HANDLE serial_openPort(const char *portName, int baud,
 	newtio.c_lflag = 0;       //ICANON;
 	newtio.c_cc[VMIN] = 1;
 	newtio.c_cc[VTIME] = 0;
-	tcflush(fd, TCIFLUSH);
-	tcsetattr(fd, TCSANOW, &newtio);
+	tcflush(_portHandle, TCIFLUSH);
+	tcsetattr(_portHandle, TCSANOW, &newtio);
 
-	return 1;
+	return _portHandle;
 #endif
 }
 
 void serial_closePort(HANDLE portHandle) {
 #ifdef _WIN32
 	CloseHandle(portHandle);
-	_portHandle = INVALID_HANDLE_VALUE;
 #endif
 #ifdef linux
 	tcsetattr(portHandle, TCSANOW, &oldtio);
 	close(portHandle);
 #endif
+	_portHandle = INVALID_HANDLE_VALUE;
 }
 
 int _inbyte(unsigned short timeout) {
