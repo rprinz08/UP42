@@ -10,5 +10,5 @@ set DEVBASE=\portable\development
 set TCCBASE=%DEVBASE%\tcc\tcc_%ARCH%
 set MAKE=%TCCBASE%\make.exe
 
-%MAKE% "ARCH=%ARCH%" %TARGET%
+%MAKE% -f Makefile.win "ARCH=%ARCH%" %TARGET%
 

@@ -13,9 +13,10 @@
 #define TWOSTOPBITS 				2
 
 #define HANDLE 						int
+#define INVALID_HANDLE_VALUE		0
 #endif
 
-extern HANDLE serial_openPort(const char *, int, unsigned char, unsigned char); 
+extern HANDLE serial_openPort(const char *, int, unsigned char, unsigned char, unsigned char); 
 extern void serial_closePort(HANDLE);
 extern int _inbyte(unsigned short);
 extern int serial_inByte(HANDLE, unsigned short);

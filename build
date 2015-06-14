@@ -1,0 +1,15 @@
+#!/bin/bash
+
+ARCH=$1
+TARGET=$2
+if [ -z $ARCH ]; then
+    ARCH=ia32
+fi
+if [ -z $TARGET ]; then
+    TARGET=all
+fi
+
+echo "*** ARCH: $ARCH"
+
+make -f Makefile.linux "ARCH=$ARCH" $TARGET
+

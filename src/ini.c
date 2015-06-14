@@ -5,6 +5,15 @@
 
 #include "ini.h"
 
+#ifdef _WIN32
+#define STRICMP		stricmp
+#define STRNICMP	strnicmp
+#endif
+
+#ifdef linux
+#define STRICMP		strcasecmp
+#define STRNICMP	strncasecmp
+#endif
 
 
 /**************************************************************************
@@ -19,7 +28,8 @@ int read_line(FILE *fp, char *bp)
     int i = 0;
 
     /* Read one line from the source file */
-    while( (c = getc(fp)) != '\n' ) {
+    //while( (c = getc(fp)) != '\n' ) {
+    while( (c = getc(fp)) >= 32 ) {
          if( c == EOF )         /* return FALSE on unexpected EOF */
               return(0);
          bp[i++] = c;
@@ -58,7 +68,7 @@ int get_private_profile_int(const char *section, const char *entry,
               fclose(fp);
               return(def);
          }
-    } while( stricmp(buff,t_section) );
+    } while( STRICMP(buff,t_section) != 0 );
     /* Now that the section has been found, find the entry.
 	* Stop searching upon leaving the section's area. */
     do {
@@ -66,7 +76,7 @@ int get_private_profile_int(const char *section, const char *entry,
 		    fclose(fp);
 		    return(def);
 	    }
-    } while( strnicmp(buff,entry,len) );
+    } while( STRNICMP(buff,entry,len) != 0 );
     ep = strchr(buff,'=');    /* Parse out the equal sign */
     ep++;
     if( !strlen(ep) )          /* No setting? */
@@ -115,7 +125,7 @@ int get_private_profile_string(const char *section, const char *entry, char *def
               return(strlen(buffer));
          }
     }
-    while( stricmp(buff,t_section) );
+    while( STRICMP(buff,t_section) );
     /* Now that the section has been found, find the entry.
      * Stop searching upon leaving the section's area. */
     do {
@@ -126,7 +136,7 @@ int get_private_profile_string(const char *section, const char *entry, char *def
 		    strncpy(buffer,def,buffer_len);
 		    return(strlen(buffer));
 	    }
-    } while( strnicmp(buff,entry,len) );
+    } while( STRNICMP(buff,entry,len) != 0 );
     ep = strchr(buff,'=');    /* Parse out the equal sign */
     ep++;
     p=buffer;

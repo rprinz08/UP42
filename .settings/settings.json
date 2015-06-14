@@ -1,6 +1,6 @@
 // Place your settings in this file to overwrite default and user settings.
 {
-	"editor.fontFamily": "Consolas",
+	"editor.fontFamily": "Courier",
 	"editor.fontSize": 20,
 	"editor.tabSize": 4,
 	"editor.glyphMargin": true

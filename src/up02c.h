@@ -11,7 +11,16 @@
 #define EXIT_COMM_ERROR				7
 #define EXIT_UNKNOWN_ERROR			9
 
-#define VERSION     				"0.2"
+#define VERSION					"0.2"
+#ifdef _WIN32
+#define OS						"Windows"
+#else
+#ifdef linux
+#define OS						"Linux"
+#else
+#define OS						"unknown"
+#endif
+#endif
 
 extern int verbosity;
 extern int quiet;

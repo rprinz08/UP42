@@ -1,4 +1,4 @@
-/*	
+/*
  * Copyright 2001-2010 Georges Menie (www.menie.org)
  * All rights reserved.
  * Redistribution and use in source and binary forms, with or without
@@ -33,8 +33,9 @@
      void _outbyte(int c);
 
  */
- 
+
 #include <stdio.h>
+#include <string.h>
 #include <stdarg.h>
 
 #ifdef _WIN32
@@ -197,11 +198,11 @@ int xmodemTransmit(unsigned char *src, int srcsz)
 
 		for(;;) {
 		start_trans:
-			
+
 x = ((double)len / srcsz) * 100;
 //printf("Sent: %d from %d (%.2f%%)\n", len, srcsz, (x > 100.0 ? 100 : x));
 printInfo(LOG_NORMAL, stdout, "Sent %.2f%%    \r", (x > 100.0 ? 100 : x));
-		
+
 			xbuff[0] = SOH; bufsz = 128;
 			xbuff[1] = packetno;
 			xbuff[2] = ~packetno;

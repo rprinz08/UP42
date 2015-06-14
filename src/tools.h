@@ -13,6 +13,7 @@ extern char *emptyString;
 
 extern int fileExists(const char *);
 extern unsigned long getMs();
+extern void delay(int);
 extern void freeTableElement(void *);
 extern void freeAllTable();
 extern char *cloneString(const char *);
@@ -21,6 +22,6 @@ extern char *formatString(const char *, ...);
 extern void printInfo(int, FILE *, const char *, ...);
 extern void printError(FILE *, const char *, ...);
 extern char *getTempFile(char *);
-extern void showDump(int, FILE *, unsigned char *, unsigned int);
+extern void showDump(int, FILE *, char *, unsigned int);
 
 #endif
