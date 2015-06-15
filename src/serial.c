@@ -20,17 +20,26 @@
 
 HANDLE _portHandle = INVALID_HANDLE_VALUE;
 #ifdef linux
+int wait_flag=TRUE;
 struct termios oldtio, newtio;
+#endif
+
+#ifdef linux
+void signal_handler_IO(int status)
+{
+	printInfo(LOG_COMM, stdout, "received SIGIO signal\n");	
+	wait_flag = FALSE;
+}
 #endif
 
 HANDLE serial_openPort(const char *portName, int baud,
 		unsigned char parity, unsigned char dataBits, unsigned char stopBits) {
+	HANDLE portHandle = INVALID_HANDLE_VALUE;			
 #ifdef _WIN32
-	int i; 
 	DCB dcb = { 0 }; 
 	//char *portName = "\\\\.\\COM13"; 
 
-	HANDLE portHandle = CreateFile(portName, 
+	portHandle = CreateFile(portName, 
 		GENERIC_READ | GENERIC_WRITE, 
 		0, NULL, OPEN_EXISTING, 0, NULL); 
 	if(portHandle == INVALID_HANDLE_VALUE) 
@@ -45,11 +54,9 @@ HANDLE serial_openPort(const char *portName, int baud,
 
 	if(!SetCommState(portHandle, &dcb)) 
 		return INVALID_HANDLE_VALUE;
-
-	_portHandle = portHandle;
-	return portHandle;
 #endif
 #ifdef linux
+	struct sigaction saio;
 	long BAUD;
 	long DATABITS;
 	long STOPBITS;
@@ -147,25 +154,41 @@ HANDLE serial_openPort(const char *portName, int baud,
 			break;
 	}
 
-	_portHandle = open(portName, O_RDWR | O_NOCTTY);
-	if(_portHandle < 0)
+	portHandle = open(portName, O_RDWR | O_NOCTTY | O_NONBLOCK);
+	if(portHandle < 0)
 		return INVALID_HANDLE_VALUE;
 
+	//install the serial handler before making the device asynchronous
+	saio.sa_handler = signal_handler_IO;
+	sigemptyset(&saio.sa_mask);   //saio.sa_mask = 0;
+	saio.sa_flags = 0;
+	saio.sa_restorer = NULL;
+	sigaction(SIGIO, &saio, NULL);
+	
+	// allow the process to receive SIGIO
+	fcntl(fd, F_SETOWN, getpid());
+	
+	// Make the file descriptor asynchronous (the manual page says only
+	// O_APPEND and O_NONBLOCK, will work with F_SETFL...)
+	fcntl(portHandle, F_SETFL, FASYNC);
+	  
 	// save current port settings
-	tcgetattr(_portHandle, &oldtio);
+	tcgetattr(portHandle, &oldtio);
 
 	// set new port settings for canonical input processing 
-	newtio.c_cflag = BAUD | CRTSCTS | DATABITS | STOPBITS | PARITYON | PARITY | CLOCAL | CREAD;
+	newtio.c_cflag = BAUD | CRTSCTS | DATABITS | 
+					STOPBITS | PARITYON | PARITY | CLOCAL | 
+					CREAD;
 	newtio.c_iflag = IGNPAR;
 	newtio.c_oflag = 0;
 	newtio.c_lflag = 0;       //ICANON;
 	newtio.c_cc[VMIN] = 1;
 	newtio.c_cc[VTIME] = 0;
-	tcflush(_portHandle, TCIFLUSH);
-	tcsetattr(_portHandle, TCSANOW, &newtio);
-
-	return _portHandle;
+	tcflush(portHandle, TCIFLUSH);
+	tcsetattr(portHandle, TCSANOW, &newtio);
 #endif
+	_portHandle = portHandle;
+	return portHandle;
 }
 
 void serial_closePort(HANDLE portHandle) {
@@ -184,8 +207,8 @@ int _inbyte(unsigned short timeout) {
 }
 
 int serial_inByte(HANDLE portHandle, unsigned short timeout) {
-#ifdef _WIN32
 	unsigned char ch = 0; 
+#ifdef _WIN32
 	DWORD read = 0; 	
 	COMMTIMEOUTS timeouts;
 	
@@ -198,17 +221,24 @@ int serial_inByte(HANDLE portHandle, unsigned short timeout) {
         printError(stderr, "setting port time-outs");	
 	
 	ReadFile(portHandle, &ch, 1, &read, NULL); 
+#endif
+#ifdef linux
+	long read = 0; 
+	unsigned long tx = getMs() + timeout;
+
+	while(wait_flag && getMs() < tx)
+		delay(20);
+
+	if(!wait_flag)	
+		read = read(portHandle, &ch, 1);
+	wait_flag = TRUE;
+#endif
 	printInfo(LOG_COMM, stdout,
 		"< %3d %c 0x%02x\n", read, (ch < 31 ? '.' : ch), ch);
-	
+			
 	if(read <= 0)
 		return -1;
 	return ch;
-#endif
-#ifdef linux
-	delay(500);
-    return 0;
-#endif
 }
 
 void _outbyte(int c) {
@@ -216,15 +246,16 @@ void _outbyte(int c) {
 }
 
 void serial_outByte(HANDLE portHandle, unsigned char c) {
-#ifdef _WIN32
 	unsigned char ch = c;
+#ifdef _WIN32
 	DWORD written = 0;
 	WriteFile(portHandle, &ch, 1, &written, NULL);
-	printInfo(LOG_COMM, stdout,
-		"> %c 0x%02x\n", (ch < 31 ? '.' : ch), ch);
 #endif
 #ifdef linux
+	write(portHandle, &ch, 1);
 #endif
+	printInfo(LOG_COMM, stdout,
+		"> %c 0x%02x\n", (ch < 31 ? '.' : ch), ch);
 }
 
 int serial_setDTR(HANDLE portHandle, unsigned char DTR) {
@@ -232,6 +263,12 @@ int serial_setDTR(HANDLE portHandle, unsigned char DTR) {
 	return (!EscapeCommFunction(portHandle, (DTR ? SETDTR : CLRDTR)));
 #endif
 #ifdef linux
-	return 0;
+	int status;
+	ioctl(portHandle, TIOCMGET, &status);
+	if(DTR)
+		status |= TIOCM_DTR;
+	else
+		status &= ~TIOCM_DTR;
+	return (ioctl(portHandle, TIOCMSET, &status) < 0);	
 #endif
 }
