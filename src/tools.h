@@ -9,6 +9,9 @@
 
 #define MAX_STRING					1024
 
+#define FALSE						0
+#define TRUE						1
+
 extern char *emptyString;
 
 extern int fileExists(const char *);

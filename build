@@ -9,6 +9,8 @@ if [ -z $TARGET ]; then
     TARGET=all
 fi
 
+mkdir -p ./bin/$ARCH
+
 echo "*** ARCH: $ARCH"
 
 make -f Makefile.linux "ARCH=$ARCH" $TARGET

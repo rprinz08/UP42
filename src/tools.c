@@ -67,7 +67,7 @@ unsigned long getMs() {
 	unsigned long long millisecondsSinceEpoch =
 		(unsigned long long)(tv.tv_sec) * 1000 +
 		(unsigned long long)(tv.tv_usec) / 1000;
-//printf("%llu\n", millisecondsSinceEpoch);
+printf("%llu\n", millisecondsSinceEpoch);
 	return millisecondsSinceEpoch & 0x00000000FFFFFFFF;
 #endif
 }
@@ -78,11 +78,13 @@ void delay(int ms) {
 #endif
 #ifdef linux
 #if _POSIX_C_SOURCE >= 199309L
+printf("a");
 	struct timespec ts;
 	ts.tv_sec = 0;
 	ts.tv_nsec = ms * 1000000;
 	nanosleep(&ts, NULL);
 #else
+printf("b");
 	usleep(ms * 1000);
 #endif
 #endif

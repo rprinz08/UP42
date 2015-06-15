@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #include <sys/signal.h>
 #include <sys/types.h>
+#include <sys/ioctl.h>
 #endif
 
 #include "up02c.h"
@@ -27,8 +28,12 @@ struct termios oldtio, newtio;
 #ifdef linux
 void signal_handler_IO(int status)
 {
-	printInfo(LOG_COMM, stdout, "received SIGIO signal\n");	
-	wait_flag = FALSE;
+	int bytes;
+
+	ioctl(_portHandle, FIONREAD, &bytes);
+
+	printInfo(LOG_COMM, stdout, "received SIGIO signal. status (0x%08X), bytes (%d)\n", status, bytes);
+	wait_flag = (bytes <= 0);
 }
 #endif
 
@@ -166,7 +171,7 @@ HANDLE serial_openPort(const char *portName, int baud,
 	sigaction(SIGIO, &saio, NULL);
 	
 	// allow the process to receive SIGIO
-	fcntl(fd, F_SETOWN, getpid());
+	fcntl(portHandle, F_SETOWN, getpid());
 	
 	// Make the file descriptor asynchronous (the manual page says only
 	// O_APPEND and O_NONBLOCK, will work with F_SETFL...)
@@ -207,36 +212,39 @@ int _inbyte(unsigned short timeout) {
 }
 
 int serial_inByte(HANDLE portHandle, unsigned short timeout) {
-	unsigned char ch = 0; 
+	unsigned char ch = 0;
 #ifdef _WIN32
-	DWORD read = 0; 	
+	DWORD readBytes = 0;
 	COMMTIMEOUTS timeouts;
-	
+
     timeouts.ReadIntervalTimeout = timeout;
     timeouts.ReadTotalTimeoutMultiplier = 1;
     timeouts.ReadTotalTimeoutConstant = timeout;
     timeouts.WriteTotalTimeoutMultiplier = 0;
     timeouts.WriteTotalTimeoutConstant = 0;
     if(!SetCommTimeouts(portHandle, &timeouts))
-        printError(stderr, "setting port time-outs");	
-	
-	ReadFile(portHandle, &ch, 1, &read, NULL); 
+        printError(stderr, "setting port time-outs");
+
+	ReadFile(portHandle, &ch, 1, &readBytes, NULL);
 #endif
 #ifdef linux
-	long read = 0; 
+	long readBytes = 0;
 	unsigned long tx = getMs() + timeout;
 
 	while(wait_flag && getMs() < tx)
 		delay(20);
 
-	if(!wait_flag)	
-		read = read(portHandle, &ch, 1);
+	if(wait_flag == FALSE) {
+printf("C");
+		readBytes = read(portHandle, &ch, 1);
+printf("D\n");
+	}
 	wait_flag = TRUE;
 #endif
 	printInfo(LOG_COMM, stdout,
-		"< %3d %c 0x%02x\n", read, (ch < 31 ? '.' : ch), ch);
-			
-	if(read <= 0)
+		"< %3d %c 0x%02x\n", readBytes, (ch < 31 ? '.' : ch), ch);
+
+	if(readBytes <= 0)
 		return -1;
 	return ch;
 }
