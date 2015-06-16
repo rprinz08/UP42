@@ -17,13 +17,30 @@
 int connect(HANDLE portHandle, int timeoutMs, char showStatus) {
 	char inb = 0;
 	int t = (timeoutMs < POLL_TIME) ? POLL_TIME : timeoutMs;
-	unsigned long tx = getMs() + t;
+	//int ph = POLL_TIME / 2;
 
-	while(inb != '>' && getMs() < tx) {
-		serial_outByte(portHandle, 'D');
+	unsigned long now = getMs();	// current timestamp in ms
+	unsigned long te = now + t;		// end timestamp
+	unsigned long l = 0;			// last wait window start timestamp
+	unsigned long w = 0;			// current window size in ms
+
+	while(inb != '>' && now < te) {
+		w = now - l;
+		if(w >= POLL_TIME) {
+			l = now;
+
+			serial_outByte(portHandle, 'D');
+			if(verbosity < LOG_COMM)
+				printInfo(LOG_NORMAL, stdout, ".");
+		}
+
 		inb = serial_inByte(portHandle, POLL_TIME);
-		if(verbosity < LOG_COMM)
-			printInfo(LOG_NORMAL, stdout, ".");
+		if(inb < -1)
+			return 0;
+		//if(inb == -1)
+		//	delay(ph);
+
+		now = getMs();
 	}
 
 	return(inb == '>');

@@ -25,6 +25,7 @@ int wait_flag=TRUE;
 struct termios oldtio, newtio;
 #endif
 
+/*
 #ifdef linux
 void signal_handler_IO(int status)
 {
@@ -36,32 +37,32 @@ void signal_handler_IO(int status)
 	wait_flag = (bytes <= 0);
 }
 #endif
+*/
 
 HANDLE serial_openPort(const char *portName, int baud,
 		unsigned char parity, unsigned char dataBits, unsigned char stopBits) {
-	HANDLE portHandle = INVALID_HANDLE_VALUE;			
+	HANDLE portHandle = INVALID_HANDLE_VALUE;
 #ifdef _WIN32
-	DCB dcb = { 0 }; 
-	//char *portName = "\\\\.\\COM13"; 
+	DCB dcb = { 0 };
 
-	portHandle = CreateFile(portName, 
-		GENERIC_READ | GENERIC_WRITE, 
-		0, NULL, OPEN_EXISTING, 0, NULL); 
-	if(portHandle == INVALID_HANDLE_VALUE) 
-		return INVALID_HANDLE_VALUE; 
+	portHandle = CreateFile(portName,
+		GENERIC_READ | GENERIC_WRITE,
+		0, NULL, OPEN_EXISTING, 0, NULL);
+	if(portHandle == INVALID_HANDLE_VALUE)
+		return INVALID_HANDLE_VALUE;
 
-	dcb.DCBlength = sizeof(dcb); 
-	dcb.BaudRate = baud; 
-	dcb.fBinary = 1; 
-	dcb.Parity = parity; 
-	dcb.StopBits = ONESTOPBIT; 
-	dcb.ByteSize = dataBits; 
+	dcb.DCBlength = sizeof(dcb);
+	dcb.BaudRate = baud;
+	dcb.fBinary = 1;
+	dcb.Parity = parity;
+	dcb.StopBits = ONESTOPBIT;
+	dcb.ByteSize = dataBits;
 
-	if(!SetCommState(portHandle, &dcb)) 
+	if(!SetCommState(portHandle, &dcb))
 		return INVALID_HANDLE_VALUE;
 #endif
 #ifdef linux
-	struct sigaction saio;
+	//struct sigaction saio;
 	long BAUD;
 	long DATABITS;
 	long STOPBITS;
@@ -134,7 +135,7 @@ HANDLE serial_openPort(const char *portName, int baud,
 	}
 
 	switch(stopBits) {
-		case 1:
+		case 0:
 		default:
 			STOPBITS = 0;
 			break;
@@ -143,7 +144,7 @@ HANDLE serial_openPort(const char *portName, int baud,
 			break;
 	}
 
-	switch(parity)	{
+	switch(parity) {
 		case 0:
 		default:
 			PARITYON = 0;
@@ -159,10 +160,12 @@ HANDLE serial_openPort(const char *portName, int baud,
 			break;
 	}
 
-	portHandle = open(portName, O_RDWR | O_NOCTTY | O_NONBLOCK);
+	//portHandle = open(portName, O_RDWR | O_NOCTTY | O_NONBLOCK);
+	portHandle = open(portName, O_RDWR | O_NOCTTY);
 	if(portHandle < 0)
 		return INVALID_HANDLE_VALUE;
 
+	/*
 	//install the serial handler before making the device asynchronous
 	saio.sa_handler = signal_handler_IO;
 	sigemptyset(&saio.sa_mask);   //saio.sa_mask = 0;
@@ -176,18 +179,20 @@ HANDLE serial_openPort(const char *portName, int baud,
 	// Make the file descriptor asynchronous (the manual page says only
 	// O_APPEND and O_NONBLOCK, will work with F_SETFL...)
 	fcntl(portHandle, F_SETFL, FASYNC);
-	  
+	*/
 	// save current port settings
 	tcgetattr(portHandle, &oldtio);
 
-	// set new port settings for canonical input processing 
+	// set new port settings for canonical input processing
 	newtio.c_cflag = BAUD | CRTSCTS | DATABITS | 
-					STOPBITS | PARITYON | PARITY | CLOCAL | 
+					STOPBITS | PARITYON | PARITY | CLOCAL |
 					CREAD;
 	newtio.c_iflag = IGNPAR;
 	newtio.c_oflag = 0;
 	newtio.c_lflag = 0;       //ICANON;
-	newtio.c_cc[VMIN] = 1;
+	//newtio.c_cc[VMIN] = 1;
+	newtio.c_cc[VMIN] = 0;
+	//newtio.c_cc[VTIME] = 0;
 	newtio.c_cc[VTIME] = 0;
 	tcflush(portHandle, TCIFLUSH);
 	tcsetattr(portHandle, TCSANOW, &newtio);
@@ -211,41 +216,45 @@ int _inbyte(unsigned short timeout) {
 	return serial_inByte(_portHandle, timeout);
 }
 
-int serial_inByte(HANDLE portHandle, unsigned short timeout) {
+int serial_inByte(HANDLE portHandle, unsigned short timeoutMs) {
 	unsigned char ch = 0;
 #ifdef _WIN32
 	DWORD readBytes = 0;
 	COMMTIMEOUTS timeouts;
 
-    timeouts.ReadIntervalTimeout = timeout;
-    timeouts.ReadTotalTimeoutMultiplier = 1;
-    timeouts.ReadTotalTimeoutConstant = timeout;
-    timeouts.WriteTotalTimeoutMultiplier = 0;
-    timeouts.WriteTotalTimeoutConstant = 0;
-    if(!SetCommTimeouts(portHandle, &timeouts))
-        printError(stderr, "setting port time-outs");
+	timeouts.ReadIntervalTimeout = timeoutMs;
+	timeouts.ReadTotalTimeoutMultiplier = 1;
+	timeouts.ReadTotalTimeoutConstant = timeoutMs;
+	timeouts.WriteTotalTimeoutMultiplier = 0;
+	timeouts.WriteTotalTimeoutConstant = 0;
+	if(!SetCommTimeouts(portHandle, &timeouts))
+		printError(stderr, "setting port time-outs");
 
 	ReadFile(portHandle, &ch, 1, &readBytes, NULL);
 #endif
 #ifdef linux
 	long readBytes = 0;
-	unsigned long tx = getMs() + timeout;
+	//unsigned long tx = getMs() + timeoutMs;
 
-	while(wait_flag && getMs() < tx)
-		delay(20);
+	//while(wait_flag && getMs() < tx)
+	//	delay(20);
 
-	if(wait_flag == FALSE) {
-printf("C");
+	//if(wait_flag == FALSE) {
+		newtio.c_cc[VTIME] = (timeoutMs / 100);
+		tcflush(portHandle, TCIFLUSH);
+		tcsetattr(portHandle, TCSANOW, &newtio);
 		readBytes = read(portHandle, &ch, 1);
-printf("D\n");
-	}
-	wait_flag = TRUE;
+	//}
+	//wait_flag = TRUE;
 #endif
 	printInfo(LOG_COMM, stdout,
 		"< %3d %c 0x%02x\n", readBytes, (ch < 31 ? '.' : ch), ch);
 
-	if(readBytes <= 0)
+	if(readBytes == 0)
 		return -1;
+	if(readBytes < 0)
+		return -2;
+
 	return ch;
 }
 
@@ -277,6 +286,6 @@ int serial_setDTR(HANDLE portHandle, unsigned char DTR) {
 		status |= TIOCM_DTR;
 	else
 		status &= ~TIOCM_DTR;
-	return (ioctl(portHandle, TIOCMSET, &status) < 0);	
+	return (ioctl(portHandle, TIOCMSET, &status) < 0);
 #endif
 }
