@@ -184,7 +184,8 @@ HANDLE serial_openPort(const char *portName, int baud,
 	tcgetattr(portHandle, &oldtio);
 
 	// set new port settings for canonical input processing
-	newtio.c_cflag = BAUD | CRTSCTS | DATABITS | 
+	//newtio.c_cflag = BAUD | CRTSCTS | DATABITS |
+	newtio.c_cflag = BAUD | DATABITS |
 					STOPBITS | PARITYON | PARITY | CLOCAL |
 					CREAD;
 	newtio.c_iflag = IGNPAR;
@@ -193,7 +194,7 @@ HANDLE serial_openPort(const char *portName, int baud,
 	//newtio.c_cc[VMIN] = 1;
 	newtio.c_cc[VMIN] = 0;
 	//newtio.c_cc[VTIME] = 0;
-	newtio.c_cc[VTIME] = 0;
+	newtio.c_cc[VTIME] = 5;
 	tcflush(portHandle, TCIFLUSH);
 	tcsetattr(portHandle, TCSANOW, &newtio);
 #endif
@@ -240,9 +241,9 @@ int serial_inByte(HANDLE portHandle, unsigned short timeoutMs) {
 	//	delay(20);
 
 	//if(wait_flag == FALSE) {
-		newtio.c_cc[VTIME] = (timeoutMs / 100);
-		tcflush(portHandle, TCIFLUSH);
-		tcsetattr(portHandle, TCSANOW, &newtio);
+		//newtio.c_cc[VTIME] = (timeoutMs / 100);
+		//tcflush(portHandle, TCIFLUSH);
+		//tcsetattr(portHandle, TCSANOW, &newtio);
 		readBytes = read(portHandle, &ch, 1);
 	//}
 	//wait_flag = TRUE;
@@ -252,8 +253,8 @@ int serial_inByte(HANDLE portHandle, unsigned short timeoutMs) {
 
 	if(readBytes == 0)
 		return -1;
-	if(readBytes < 0)
-		return -2;
+	//if(readBytes < 0)
+	//	return -2;
 
 	return ch;
 }
@@ -265,14 +266,15 @@ void _outbyte(int c) {
 void serial_outByte(HANDLE portHandle, unsigned char c) {
 	unsigned char ch = c;
 #ifdef _WIN32
-	DWORD written = 0;
-	WriteFile(portHandle, &ch, 1, &written, NULL);
+	DWORD wroteBytes = 0;
+	WriteFile(portHandle, &ch, 1, &wroteBytes, NULL);
 #endif
 #ifdef linux
-	write(portHandle, &ch, 1);
+	long wroteBytes = 0;
+	wroteBytes = write(portHandle, &c, 1);
 #endif
 	printInfo(LOG_COMM, stdout,
-		"> %c 0x%02x\n", (ch < 31 ? '.' : ch), ch);
+		"> %3d %c 0x%02x\n", wroteBytes, (ch < 31 ? '.' : ch), ch);
 }
 
 int serial_setDTR(HANDLE portHandle, unsigned char DTR) {
