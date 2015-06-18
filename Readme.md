@@ -106,5 +106,25 @@ So you can simply call
 After flashing the receiver the boot loader mode is ended and the new firmware started.
 
 
+##Compiling
+
+###Windows
+Building on Windows can be done in two ways:
+1. building with TCC (Tiny C compiler)
+If you dont have Visual Studio available or dont want install it wasting
+some gigabytes, UP42 can be compiled using the TCC from http://bellard.org/tcc/
+Download and install the 32 or 64 bit version and change the *build.cmd* file 
+with the path to TCC. You will also need GNU make for Windows from 
+http://gnuwin32.sourceforge.net/packages/make.htm 
+
+2. building using Microsoft Visual Studio
+For building UP42 with Visual Studio there is a solution file included.
+
+###Linux
+To build under Linux you can use the included `build.sh` script which uses make and gcc.
+
  
- 
+##Connecting the board / the flash cable
+UP42 needs a serial connection to the receiver board. Walkera receivers work low
+3.3 voltage wheras a PC serial port uses 12 Volts. So directly connecting the receiver
+to the PC is not a good idea.
