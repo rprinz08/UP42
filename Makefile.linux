@@ -1,4 +1,5 @@
-ARCH=ia64
+BIT=$(shell getconf LONG_BIT)
+ARCH=ia$(BIT)
 CC=gcc
 CFLAGS=-DARCH='"$(ARCH)"' -MD -Wall -c
 
