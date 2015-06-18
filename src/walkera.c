@@ -12,7 +12,7 @@
 #include "walkera.h"
 #include "xmodem.h"
 #include "tools.h"
-#include "up02c.h"
+#include "up42.h"
 
 int connectBoard(HANDLE portHandle, int timeoutMs, char showStatus) {
 	char inb = 0;

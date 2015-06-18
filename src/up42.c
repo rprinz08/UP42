@@ -12,7 +12,7 @@
 #include <unistd.h>
 #endif
 
-#include "up02c.h"
+#include "up42.h"
 #include "e4c.h"
 #include "gopt.h"
 #include "ini.h"

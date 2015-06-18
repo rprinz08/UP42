@@ -46,7 +46,7 @@
 #include "crc16.h"
 #include "serial.h"
 #include "tools.h"
-#include "up02c.h"
+#include "up42.h"
 
 
 static int check(int crc, const unsigned char *buf, int sz)

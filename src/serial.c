@@ -15,7 +15,7 @@
 #include <sys/ioctl.h>
 #endif
 
-#include "up02c.h"
+#include "up42.h"
 #include "serial.h"
 #include "tools.h"
 

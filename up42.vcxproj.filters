@@ -33,7 +33,7 @@
     <ClCompile Include="src\tools.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\up02c.c">
+    <ClCompile Include="src\up42.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\walkera.c">
@@ -65,7 +65,7 @@
     <ClInclude Include="src\tools.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\up02c.h">
+    <ClInclude Include="src\up42.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\walkera.h">

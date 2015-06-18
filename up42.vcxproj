@@ -142,7 +142,7 @@
     <ClCompile Include="src\ini.c" />
     <ClCompile Include="src\serial.c" />
     <ClCompile Include="src\tools.c" />
-    <ClCompile Include="src\up02c.c" />
+    <ClCompile Include="src\up42.c" />
     <ClCompile Include="src\walkera.c" />
     <ClCompile Include="src\xmodem.c" />
     <ClCompile Include="src\xor.c" />
@@ -154,7 +154,7 @@
     <ClInclude Include="src\ini.h" />
     <ClInclude Include="src\serial.h" />
     <ClInclude Include="src\tools.h" />
-    <ClInclude Include="src\up02c.h" />
+    <ClInclude Include="src\up42.h" />
     <ClInclude Include="src\walkera.h" />
     <ClInclude Include="src\xmodem.h" />
     <ClInclude Include="src\xor.h" />

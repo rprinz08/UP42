@@ -4,11 +4,11 @@ CFLAGS=-DARCH='"$(ARCH)"' -MD -Wall -c
 
 SRCPATH=src
 BINPATH=bin/$(ARCH)
-SOURCES=up02c.c walkera.c xor.c serial.c xmodem.c crc16.c gopt.c ini.c tools.c e4c.c
+SOURCES=up42.c walkera.c xor.c serial.c xmodem.c crc16.c gopt.c ini.c tools.c e4c.c
 OBJECTS=$(SOURCES:%.c=$(BINPATH)/%.o)
 DEP=$(OBJECTS:.o=.d)
 -include $(DEP)
-EXECUTABLE=$(BINPATH)/up02c
+EXECUTABLE=$(BINPATH)/up42
 
 all: $(EXECUTABLE)
 
