@@ -3,9 +3,9 @@
 
 #define POLL_TIME		500
 
-extern int connect(HANDLE, int, char);
-extern void disconnect(HANDLE);
-extern int getInfo(HANDLE, int, char *, int);
-extern int flash(HANDLE, int, const char *);
+extern int connectBoard(HANDLE, int, char);
+extern void disconnectBoard(HANDLE);
+extern int getBoardInfo(HANDLE, int, char *, int);
+extern int flashBoard(HANDLE, int, const char *);
 
 #endif

@@ -14,7 +14,7 @@
 #include "tools.h"
 #include "up02c.h"
 
-int connect(HANDLE portHandle, int timeoutMs, char showStatus) {
+int connectBoard(HANDLE portHandle, int timeoutMs, char showStatus) {
 	char inb = 0;
 	int t = (timeoutMs < POLL_TIME) ? POLL_TIME : timeoutMs;
 	//int ph = POLL_TIME / 2;
@@ -46,11 +46,11 @@ int connect(HANDLE portHandle, int timeoutMs, char showStatus) {
 	return(inb == '>');
 }
 
-void disconnect(HANDLE portHandle) {
+void disconnectBoard(HANDLE portHandle) {
 	serial_outByte(portHandle, 'Q');
 }
 
-int getInfo(HANDLE portHandle, int timeoutMs, char *buffer, int buffer_size) {
+int getBoardInfo(HANDLE portHandle, int timeoutMs, char *buffer, int buffer_size) {
 	int st;
 	char inb = '>';
 	int t = (timeoutMs < POLL_TIME) ? POLL_TIME : timeoutMs;
@@ -71,7 +71,7 @@ int getInfo(HANDLE portHandle, int timeoutMs, char *buffer, int buffer_size) {
 	return st;
 }
 
-int flash(HANDLE portHandle, int timeoutMs, const char *fileName) {
+int flashBoard(HANDLE portHandle, int timeoutMs, const char *fileName) {
 	int st;
 	struct stat xstat;
 	char *buffer;

@@ -415,7 +415,7 @@ int main(int argc, const char **argv) {
 		}
 
 		// connect to board bootloader
-		int isConnected = connect(portHandle, 10000, 1);
+		int isConnected = connectBoard(portHandle, 10000, 1);
 		if(!isConnected) {
 			printInfo(LOG_NORMAL, stderr, 
 				"\nError unable to connect on port (%s)\n", port);
@@ -425,7 +425,7 @@ int main(int argc, const char **argv) {
 			"\n");
 
 		// query board info
-		if(getInfo(portHandle, 10000, (char *)&wb, MAX_STRING) < 0)
+		if(getBoardInfo(portHandle, 10000, (char *)&wb, MAX_STRING) < 0)
 			printInfo(LOG_NORMAL, stderr,
 				"Warning unable to identify receiver board\n");
 		else
@@ -433,7 +433,7 @@ int main(int argc, const char **argv) {
 				"Connected to: %s\n", wb);
 
 		// flash firmware
-		l = flash(portHandle, 10000, outputFileName);
+		l = flashBoard(portHandle, 10000, outputFileName);
 		if(l < 0)
 			printInfo(LOG_NORMAL, stderr,
 				"Warning unable to flash board\n");
@@ -445,7 +445,7 @@ int main(int argc, const char **argv) {
 			unlink(outputFileName);
 
 		// close port
-		disconnect(portHandle);
+		disconnectBoard(portHandle);
 		serial_closePort(portHandle);
 	}
 

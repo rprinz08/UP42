@@ -64,7 +64,7 @@ static const unsigned short crc16tab[256]= {
 	0x6e17,0x7e36,0x4e55,0x5e74,0x2e93,0x3eb2,0x0ed1,0x1ef0
 };
 
-unsigned short crc16_ccitt(const void *buf, int len)
+unsigned short crc16_ccitt(const unsigned char *buf, int len)
 {
 	register int counter;
 	register unsigned short crc = 0;
