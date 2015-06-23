@@ -110,34 +110,49 @@ After flashing the receiver the bootloader mode is ended and the new firmware is
 
 ###Windows
 Building on Windows can be done in two ways:
-1. building with TCC (Tiny C compiler)
-If you dont have Visual Studio available or dont want install it wasting
-some gigabytes of disk space, UP42 can be compiled using TCC from http://bellard.org/tcc/.
-Download and install the 32 or 64 bit version and change the *build.cmd* file 
-with the path to TCC. You will also need GNU make for Windows from 
-http://gnuwin32.sourceforge.net/packages/make.htm 
 
-2. building using Microsoft Visual Studio.
-For building UP42 with Visual Studio there is a solution file (.sln) included.
-Open it with Visual Studio and compile it either for 32 or 64 bit.
+1. building with TCC (Tiny C compiler) If you dont have Visual Studio available or dont want install it wasting some gigabytes of disk space, UP42 can be compiled using TCC from http://bellard.org/tcc/. Download and install the 32 or 64 bit version and change the *build.cmd* file with the path to TCC. You will also need GNU make for Windows from http://gnuwin32.sourceforge.net/packages/make.htm 
+
+2. building using Microsoft Visual Studio. For building UP42 with Visual Studio there is a solution file (.sln) included. Open it with Visual Studio and compile it either for 32 or 64 bit.
+
+Prebuilt Windows binaries are available:
+
+1. [Version 1.0 for Windows 32 bit](url=attachs/WinUP42-32-1_0.zip)
+2. [Version 1.0 for Windows 64 bit](url=attachs/WinUP42-64-1_0.zip)
 
 ###Linux
 To build under Linux you can use the included `build.sh` shell script which uses make and gcc.
 
+
+Included is a **.settings** folder with [Visual Studio Code (VSCODE)](https://www.visualstudio.com/en-us/products/code-vs.aspx) settings allowing compiling UP42
+with TCC from inside VSCODE by pressing **CTRL+SHIFT+P** and **run task ...**. 
+
  
 ##Connecting the board / the flash cable
-UP42 needs a serial connection to the receiver board. Walkera receivers work with low
-voltage (3.3V) wheras a PC serial port uses 12 Volts. So directly connecting the receiver
-to the PC is not a good idea. So a level shifter like the [MAX3232 from Maxim](http://www.maximintegrated.com/en/products/interface/transceivers/MAX3232.html#popuppdf) must be used.
+UP42 needs a serial connection to the receiver board. Walkera receivers work with low voltage (3.3V) wheras a PC serial port uses 12 Volts. So directly connecting the receiver to the PC is not a good idea. A level shifter like the [MAX3232 from Maxim](http://www.maximintegrated.com/en/products/interface/transceivers/MAX3232.html#popuppdf) must be used.
 
-Such a cable was already shown at http://www.min.at/prinz/?x=entry:entry140107-181200. UP42 can be used with
-this cable but you have to manually enter bootloader mode by reseting (powering on) the receiver
-while UP42 waits for the board to become ready (about ~ 10 seconds).
+Such a cable was already shown [in another post](http://www.min.at/prinz/?x=entry:entry140107-181200). UP42 can be used with this cable but you have to manually enter bootloader mode by reseting (powering on) the receiver while UP42 waits for the board to become ready (about ~ 10 seconds).
 
-This can be automated by UP42 by using the serial port DTR line to automatically reset the board
-during the wait time. Thus making firmware updates completely automatic. 
+This can be automated by using the serial port DTR line to reset the board during the wait time. Thus making firmware updates completely automatic. For this to work the following modified cable must be used.
 
-More infos can be found at: http://www.min.at/prinz/?x=entry:entry150622-125650
+<a href="http://www.min.at/prinz/fp-content/images/rc-flash/WalkereFlasherCable2.png"><img src="http://www.min.at/prinz/fp-content/images/rc-flash/WalkereFlasherCable2.png" width="250px"></a>
 
+Board reset can be performed in two ways:
 
+1. by connecting the DTR reset to PDI_CLK
+2. or by using a FET transistor to toggle power and thus reseting the board
+
+Only use one method. If you use method #1 leave out T1 and make a straight GND connection. When using method #2 just leave PDI_CLK unconnected.
+
+<a href="http://www.min.at/prinz/fp-content/images/rc-hw/1-RX2635H-D-top-annotated.jpg"><img src="http://www.min.at/prinz/fp-content/images/rc-hw/1-RX2635H-D-top-annotated.jpg" width="250px"></a>
+
+##Usage
+
+UP42 can be used to:
+
+* flash firmware to the receiver
+* identify a receiver
+* XOR encrypt or decrypt receiver firmware
+
+If at least an input file, a key and a port is specified UP42 tries first to encrypt the input file with the given key and then flashes the encrypted firmware to the board. If no key is specified then the input file is flashed without encryption. This is usefull when flashing original Walkera firmware files which are already encrypted. If an input, and output file and a key is given but no port only an encryption is done. As XOR encryption is symetric this can also be used to decrypt (e.g. original Walkera firmware) files by using the encrypted file as input. When the -I (--info) parameter is used no encryption or flashing is done. Instead UP42 tries to connect to the board and will display it's ID string on the console.
 
