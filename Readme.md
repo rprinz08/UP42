@@ -117,8 +117,8 @@ Building on Windows can be done in two ways:
 
 Prebuilt Windows binaries are available:
 
-1. [Version 1.0 for Windows 32 bit](url=attachs/WinUP42-32-1_0.zip)
-2. [Version 1.0 for Windows 64 bit](url=attachs/WinUP42-64-1_0.zip)
+1. [Version 1.0 for Windows 32 bit](url=http://www.min.at/prinz/fp-content/attachs/WinUP42-32-1_0.zip)
+2. [Version 1.0 for Windows 64 bit](url=http://www.min.at/prinz/fp-content/attachs/WinUP42-64-1_0.zip)
 
 ###Linux
 To build under Linux you can use the included `build.sh` shell script which uses make and gcc.
@@ -135,7 +135,9 @@ Such a cable was already shown [in another post](http://www.min.at/prinz/?x=entr
 
 This can be automated by using the serial port DTR line to reset the board during the wait time. Thus making firmware updates completely automatic. For this to work the following modified cable must be used.
 
-<a href="http://www.min.at/prinz/fp-content/images/rc-flash/WalkereFlasherCable2.png"><img src="http://www.min.at/prinz/fp-content/images/rc-flash/WalkereFlasherCable2.png" width="250px"></a>
+<center>
+<a href="http://www.min.at/prinz/fp-content/images/rc-flash/WalkereFlasherCable2.png"><img src="http://www.min.at/prinz/fp-content/images/rc-flash/WalkereFlasherCable2.png" width="500px"></a>
+</center>
 
 Board reset can be performed in two ways:
 
@@ -144,7 +146,9 @@ Board reset can be performed in two ways:
 
 Only use one method. If you use method #1 leave out T1 and make a straight GND connection. When using method #2 just leave PDI_CLK unconnected.
 
-<a href="http://www.min.at/prinz/fp-content/images/rc-hw/1-RX2635H-D-top-annotated.jpg"><img src="http://www.min.at/prinz/fp-content/images/rc-hw/1-RX2635H-D-top-annotated.jpg" width="250px"></a>
+<center>
+<a href="http://www.min.at/prinz/fp-content/images/rc-hw/1-RX2635H-D-top-annotated.jpg"><img src="http://www.min.at/prinz/fp-content/images/rc-hw/1-RX2635H-D-top-annotated.jpg" width="500px"></a>
+</center>	
 
 ##Usage
 
