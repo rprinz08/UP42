@@ -11,7 +11,7 @@
 #define EXIT_COMM_ERROR				7
 #define EXIT_UNKNOWN_ERROR			9
 
-#define VERSION					"0.2"
+#define VERSION					"1.0"
 #ifdef _WIN32
 #define OS						"Windows"
 #else

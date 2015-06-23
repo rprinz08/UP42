@@ -80,5 +80,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Readme.md" />
+    <None Include="src\up42.exe.ini" />
   </ItemGroup>
 </Project>
