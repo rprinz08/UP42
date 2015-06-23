@@ -117,8 +117,8 @@ Building on Windows can be done in two ways:
 
 Prebuilt Windows binaries are available:
 
-1. [Version 1.0 for Windows 32 bit](url=http://www.min.at/prinz/fp-content/attachs/WinUP42-32-1_0.zip)
-2. [Version 1.0 for Windows 64 bit](url=http://www.min.at/prinz/fp-content/attachs/WinUP42-64-1_0.zip)
+1. [Version 1.0 for Windows 32 bit](http://www.min.at/prinz/fp-content/attachs/WinUP42-32-1_0.zip)
+2. [Version 1.0 for Windows 64 bit](http://www.min.at/prinz/fp-content/attachs/WinUP42-64-1_0.zip)
 
 ###Linux
 To build under Linux you can use the included `build.sh` shell script which uses make and gcc.
