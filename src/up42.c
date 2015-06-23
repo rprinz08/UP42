@@ -12,7 +12,7 @@
 #include <unistd.h>
 #endif
 
-#include "up02c.h"
+#include "up42.h"
 #include "e4c.h"
 #include "gopt.h"
 #include "ini.h"
@@ -62,8 +62,7 @@ void showUsage(char *prgName, int exitCode) {
 	printf("-I,--info      Read board information\n");
 	printf("-P,--profile   Use model profile from config file\n");
 	printf("-q,--quiet     Be quiet. Dont output anything.\n");
-	printf("-i,--input     Input file to send. If omitted or '-' stdin will \n");
-	printf("               be used\n");
+	printf("-i,--input     Input file to send. If omitted or '-' stdin will be used\n");
 	printf("-o,--output    Output file after encryption with key. If '-' \n");
 	printf("               stdout will be used.\n");
 	printf("               If no key specified outputFile == inputFile.\n");
@@ -121,6 +120,7 @@ int main(int argc, const char **argv) {
 	int dataBits = 8;
 	int stopBits = ONESTOPBIT;
 	int noDTR = 0;
+	int onlyInfo = 0;
 
 	setbuf(stdout, NULL);
 
@@ -173,6 +173,10 @@ int main(int argc, const char **argv) {
 	noDTR = gopt(options, 'D');
 	printInfo(LOG_DEBUG, stdout, 
 		"No DTR handling (%d)\n", noDTR);
+
+	onlyInfo = gopt(options, 'I');
+	printInfo(LOG_DEBUG, stdout,
+		"Show only board infos (%d)\n", onlyInfo);
 
 	// get config file name
 	gopt_arg(options, 'c', &configFileName);
@@ -256,69 +260,81 @@ int main(int argc, const char **argv) {
 		"Serial port (%s)\n", port);
 
 	// get input file name
-	gopt_arg(options, 'i', &inputFileName);
-	if(inputFileName) {
-		if(!strcmp(inputFileName, "-"))
-			inputFile = stdin;
-		else
-			inputFile = fopen(inputFileName, "rb");
+	if (onlyInfo == 0) {
+		gopt_arg(options, 'i', &inputFileName);
+		if (inputFileName) {
+			if (!strcmp(inputFileName, "-"))
+				inputFile = stdin;
+			else
+				inputFile = fopen(inputFileName, "rb");
 
-		if(!inputFile) {
-			printError(stderr, "opening input file (%s)", inputFileName);
+			if (!inputFile) {
+				printError(stderr, "opening input file (%s)", inputFileName);
+				exitProgram(EXIT_INPUT_FILE_ERROR);
+			}
+		}
+		else {
+			printInfo(LOG_NORMAL, stderr,
+				"\nError: No input file specified!\n");
 			exitProgram(EXIT_INPUT_FILE_ERROR);
 		}
 	}
-	else {
-		printInfo(LOG_NORMAL, stderr, 
-			"\nError: No input file specified!\n");
-		exitProgram(EXIT_INPUT_FILE_ERROR);
-	}
+	else
+		inputFileName = NULL;
 	printInfo(LOG_DEBUG, stdout, 
 		"Input file (%s)\n", inputFileName);
 
 	// get output file name
-	gopt_arg(options, 'o', &outputFileName);
-	if(!outputFileName) {
-		// create temp file as output file
-		outputFileName = getTempFile((char *)prgName);
-		deleteTempOut = 1;
-	}
+	if (onlyInfo == 0) {
+		gopt_arg(options, 'o', &outputFileName);
+		if (!outputFileName) {
+			// create temp file as output file
+			outputFileName = getTempFile((char *)prgName);
+			deleteTempOut = 1;
+		}
 
-	if(outputFileName) {
-		if(!strcmp(outputFileName, "-")) {
-			if(port) {
-				printInfo(LOG_NORMAL, stderr, 
-					"\nError: stdout as output file can only be specified without port.\n");
+		if (outputFileName) {
+			if (!strcmp(outputFileName, "-")) {
+				if (port) {
+					printInfo(LOG_NORMAL, stderr,
+						"\nError: stdout as output file can only be specified without port.\n");
+					exitProgram(EXIT_OUTPUT_FILE_ERROR);
+				}
+				outputFile = stdout;
+			}
+			else
+				outputFile = fopen(outputFileName, "wb");
+
+			if (!outputFile) {
+				printError(stderr, "opening output file (%s)", outputFileName);
 				exitProgram(EXIT_OUTPUT_FILE_ERROR);
 			}
-			outputFile = stdout;
-		}
-		else
-			outputFile = fopen(outputFileName, "wb");
-
-		if(!outputFile) {
-			printError(stderr, "opening output file (%s)", outputFileName);
-			exitProgram(EXIT_OUTPUT_FILE_ERROR);
 		}
 	}
+	else
+		outputFileName = NULL;
 	printInfo(LOG_DEBUG, stdout, 
 		"Output file (%s)\n", outputFileName);
 
 	// get key
-	gopt_arg(options, 'k', &key);
-	if(key) {
-		printInfo(LOG_DEBUG, stdout, "Key: %s\n", key);
-		parsedKey = parseKey((char *)key, &keyLen);
-		printInfo(LOG_INFO, stdout, 
-			"Encrypt input file with key (hex dump follows):\n");
-		showDump(LOG_INFO, stdout, parsedKey, keyLen);
+	if (onlyInfo == 0) {
+		gopt_arg(options, 'k', &key);
+		if (key) {
+			printInfo(LOG_DEBUG, stdout, "Key: %s\n", key);
+			parsedKey = parseKey((char *)key, &keyLen);
+			printInfo(LOG_INFO, stdout,
+				"Encrypt input file with key (hex dump follows):\n");
+			showDump(LOG_INFO, stdout, parsedKey, keyLen);
+		}
+		else {
+			printInfo(LOG_DEBUG, stdout, "No key\n");
+			// create dummy key which does nothing
+			parsedKey = "\0";
+			keyLen = 1;
+		}
 	}
-	else {
-		printInfo(LOG_DEBUG, stdout, "No key\n");
-		// create dummy key which does nothing
-		parsedKey = "\0";
-		keyLen = 1;
-	}
+	else
+		key = NULL;
 
 	// serial baud
 	if(gopt_arg(options, 'b', &argument)) {
@@ -364,20 +380,22 @@ int main(int argc, const char **argv) {
 
 	// -----------------------------------------------------------------------------
 
-	try {
-		xorFile(inputFile, outputFile, parsedKey, keyLen);
-	}
-	catch(RuntimeException) {
-		const e4c_exception *exception = e4c_get_exception();
-		e4c_print_exception(exception);
-		exitProgram(EXIT_UNKNOWN_ERROR);
-	}
-	finally {
-		if(inputFile != stdin)
-			fclose(inputFile);
+	if (onlyInfo == 0) {
+		try {
+			xorFile(inputFile, outputFile, parsedKey, keyLen);
+		}
+		catch (RuntimeException) {
+			const e4c_exception *exception = e4c_get_exception();
+			e4c_print_exception(exception);
+			exitProgram(EXIT_UNKNOWN_ERROR);
+		}
+		finally {
+			if (inputFile != stdin)
+				fclose(inputFile);
 
-		if(outputFile != stdout)
-			fclose(outputFile);
+			if (outputFile != stdout)
+				fclose(outputFile);
+		}
 	}
 
 	if(port) {
@@ -415,7 +433,7 @@ int main(int argc, const char **argv) {
 		}
 
 		// connect to board bootloader
-		int isConnected = connect(portHandle, 10000, 1);
+		int isConnected = connectBoard(portHandle, 10000, 1);
 		if(!isConnected) {
 			printInfo(LOG_NORMAL, stderr, 
 				"\nError unable to connect on port (%s)\n", port);
@@ -425,27 +443,29 @@ int main(int argc, const char **argv) {
 			"\n");
 
 		// query board info
-		if(getInfo(portHandle, 10000, (char *)&wb, MAX_STRING) < 0)
+		if(getBoardInfo(portHandle, 10000, (char *)&wb, MAX_STRING) < 0)
 			printInfo(LOG_NORMAL, stderr,
 				"Warning unable to identify receiver board\n");
 		else
 			printInfo(LOG_NORMAL, stdout,
 				"Connected to: %s\n", wb);
 
-		// flash firmware
-		l = flash(portHandle, 10000, outputFileName);
-		if(l < 0)
-			printInfo(LOG_NORMAL, stderr,
+		if (onlyInfo == 0) {
+			// flash firmware
+			l = flashBoard(portHandle, 10000, outputFileName);
+			if (l < 0)
+				printInfo(LOG_NORMAL, stderr,
 				"Warning unable to flash board\n");
-		else
-			printInfo(LOG_NORMAL, stdout,
+			else
+				printInfo(LOG_NORMAL, stdout,
 				"%d bytes flashed\n", l);
 
-		if(deleteTempOut)
-			unlink(outputFileName);
+			if (deleteTempOut)
+				unlink(outputFileName);
+		}
 
 		// close port
-		disconnect(portHandle);
+		disconnectBoard(portHandle);
 		serial_closePort(portHandle);
 	}
 

@@ -15,7 +15,7 @@
 #include <sys/ioctl.h>
 #endif
 
-#include "up02c.h"
+#include "up42.h"
 #include "serial.h"
 #include "tools.h"
 
@@ -24,20 +24,6 @@ HANDLE _portHandle = INVALID_HANDLE_VALUE;
 int wait_flag=TRUE;
 struct termios oldtio, newtio;
 #endif
-
-/*
-#ifdef linux
-void signal_handler_IO(int status)
-{
-	int bytes;
-
-	ioctl(_portHandle, FIONREAD, &bytes);
-
-	printInfo(LOG_COMM, stdout, "received SIGIO signal. status (0x%08X), bytes (%d)\n", status, bytes);
-	wait_flag = (bytes <= 0);
-}
-#endif
-*/
 
 HANDLE serial_openPort(const char *portName, int baud,
 		unsigned char parity, unsigned char dataBits, unsigned char stopBits) {
@@ -160,40 +146,22 @@ HANDLE serial_openPort(const char *portName, int baud,
 			break;
 	}
 
-	//portHandle = open(portName, O_RDWR | O_NOCTTY | O_NONBLOCK);
 	portHandle = open(portName, O_RDWR | O_NOCTTY);
 	if(portHandle < 0)
 		return INVALID_HANDLE_VALUE;
 
-	/*
-	//install the serial handler before making the device asynchronous
-	saio.sa_handler = signal_handler_IO;
-	sigemptyset(&saio.sa_mask);   //saio.sa_mask = 0;
-	saio.sa_flags = 0;
-	saio.sa_restorer = NULL;
-	sigaction(SIGIO, &saio, NULL);
-	
-	// allow the process to receive SIGIO
-	fcntl(portHandle, F_SETOWN, getpid());
-	
-	// Make the file descriptor asynchronous (the manual page says only
-	// O_APPEND and O_NONBLOCK, will work with F_SETFL...)
-	fcntl(portHandle, F_SETFL, FASYNC);
-	*/
 	// save current port settings
 	tcgetattr(portHandle, &oldtio);
 
 	// set new port settings for canonical input processing
-	newtio.c_cflag = BAUD | CRTSCTS | DATABITS | 
+	newtio.c_cflag = BAUD | DATABITS |
 					STOPBITS | PARITYON | PARITY | CLOCAL |
 					CREAD;
 	newtio.c_iflag = IGNPAR;
 	newtio.c_oflag = 0;
-	newtio.c_lflag = 0;       //ICANON;
-	//newtio.c_cc[VMIN] = 1;
+	newtio.c_lflag = 0;
 	newtio.c_cc[VMIN] = 0;
-	//newtio.c_cc[VTIME] = 0;
-	newtio.c_cc[VTIME] = 0;
+	newtio.c_cc[VTIME] = 5;
 	tcflush(portHandle, TCIFLUSH);
 	tcsetattr(portHandle, TCSANOW, &newtio);
 #endif
@@ -234,26 +202,15 @@ int serial_inByte(HANDLE portHandle, unsigned short timeoutMs) {
 #endif
 #ifdef linux
 	long readBytes = 0;
-	//unsigned long tx = getMs() + timeoutMs;
-
-	//while(wait_flag && getMs() < tx)
-	//	delay(20);
-
-	//if(wait_flag == FALSE) {
-		newtio.c_cc[VTIME] = (timeoutMs / 100);
-		tcflush(portHandle, TCIFLUSH);
-		tcsetattr(portHandle, TCSANOW, &newtio);
-		readBytes = read(portHandle, &ch, 1);
-	//}
-	//wait_flag = TRUE;
+	readBytes = read(portHandle, &ch, 1);
 #endif
 	printInfo(LOG_COMM, stdout,
 		"< %3d %c 0x%02x\n", readBytes, (ch < 31 ? '.' : ch), ch);
 
 	if(readBytes == 0)
 		return -1;
-	if(readBytes < 0)
-		return -2;
+	//if(readBytes < 0)
+	//	return -2;
 
 	return ch;
 }
@@ -265,14 +222,15 @@ void _outbyte(int c) {
 void serial_outByte(HANDLE portHandle, unsigned char c) {
 	unsigned char ch = c;
 #ifdef _WIN32
-	DWORD written = 0;
-	WriteFile(portHandle, &ch, 1, &written, NULL);
+	DWORD wroteBytes = 0;
+	WriteFile(portHandle, &ch, 1, &wroteBytes, NULL);
 #endif
 #ifdef linux
-	write(portHandle, &ch, 1);
+	long wroteBytes = 0;
+	wroteBytes = write(portHandle, &c, 1);
 #endif
 	printInfo(LOG_COMM, stdout,
-		"> %c 0x%02x\n", (ch < 31 ? '.' : ch), ch);
+		"> %3d %c 0x%02x\n", wroteBytes, (ch < 31 ? '.' : ch), ch);
 }
 
 int serial_setDTR(HANDLE portHandle, unsigned char DTR) {
