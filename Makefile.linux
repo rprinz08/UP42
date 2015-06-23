@@ -11,21 +11,16 @@ DEP=$(OBJECTS:.o=.d)
 -include $(DEP)
 EXECUTABLE=$(BINPATH)/up42
 
-all: $(EXECUTABLE)
+all: prepare $(EXECUTABLE)
 
 $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
 
-$(BINPATH)/%.o: $(SRCPATH)/%.c 
+$(BINPATH)/%.o: $(SRCPATH)/%.c
 	$(CC) $(CFLAGS) $< -o $@
 
-clean:
-	rm -f $(BINPATH)/*.o
-	rm -f $(BINPATH)/*.obj
-	rm -f $(BINPATH)/*.a
-	rm -f $(BINPATH)/*.lib
-	rm -f $(BINPATH)/*.exe
-	rm -f $(BINPATH)/*.dll
-	rm -f $(BINPATH)/*.exp
-	rm -f $(BINPATH)/*.res
+prepare:
+	mkdir -p $(BINPATH)
 
+clean:
+	rm -f $(BINPATH)/*
