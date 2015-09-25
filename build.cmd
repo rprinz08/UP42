@@ -17,3 +17,4 @@ set MAKE=%TCCBASE%\make.exe
 
 %MAKE% -f Makefile.win "ARCH=%ARCH%" %TARGET%
 
+echo *** DONE

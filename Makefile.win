@@ -1,7 +1,8 @@
 ARCH=ia64
 CC=/portable/development/tcc/tcc_$(ARCH)/tcc.exe
 SC=/portable/development/devtools/sigcheck.exe
-CFLAGS=-DARCH="""$(ARCH)""" -MD -Wall -c
+CFLAGS=-DARCH=\"$(ARCH)\" -MD -Wall -c
+SHELL=C:/Windows/System32/cmd.exe
 
 SRCPATH=src
 BINPATH=bin\$(ARCH)
@@ -10,23 +11,20 @@ OBJECTS=$(SOURCES:%.c=$(BINPATH)/%.o)
 DEP=$(OBJECTS:.o=.d)
 -include $(DEP)
 EXECUTABLE=$(BINPATH)/up42.exe
+.PHONY: all clean prepare
 
-all: $(EXECUTABLE)
+all: prepare $(EXECUTABLE)
     
 $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
-	$(SC) -q -a $@
+#	$(SC) -q -a $@
 
 $(BINPATH)/%.o: $(SRCPATH)/%.c 
 	$(CC) $(CFLAGS) $< -o $@
 
+prepare:
+	-@mkdir "$(BINPATH)" >nul 2>&1 || true
+	
 clean:
-	del /Q $(BINPATH)\*.o >nul 2>&1
-	del /Q $(BINPATH)\*.obj >nul 2>&1
-	del /Q $(BINPATH)\*.a >nul 2>&1
-	del /Q $(BINPATH)\*.lib >nul 2>&1
-	del /Q $(BINPATH)\*.exe >nul 2>&1
-	del /Q $(BINPATH)\*.dll >nul 2>&1
-	del /Q $(BINPATH)\*.exp >nul 2>&1
-	del /Q $(BINPATH)\*.res >nul 2>&1
+	-@rmdir /Q /S "$(BINPATH)" >nul 2>&1 || true
 
