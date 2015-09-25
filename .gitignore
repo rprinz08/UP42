@@ -1,5 +1,6 @@
 /bin
 /private
+/.vs
 /*.suo
 /*.sdf
 /*.opensdf
