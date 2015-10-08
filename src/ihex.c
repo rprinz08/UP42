@@ -107,7 +107,7 @@ int loadHexFile(const char *filename)
 			// Data available
 			if (status == 0)
 			{
-				for(i=0; i<=(n-1); i++) {
+				for(i = 0; i <= (n - 1); i++) {
 					memory[addr] = bytes[i] & 255;
 					total++;
 					if (addr < minaddr) minaddr = addr;

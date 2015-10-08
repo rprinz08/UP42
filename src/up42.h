@@ -9,7 +9,7 @@
 #define EXIT_BAUD_ERROR				5
 #define EXIT_CONFIG_FILE_ERROR		6
 #define EXIT_COMM_ERROR				7
-#define EXIT_UNKNOWN_ERROR			9
+#define EXIT_UNKNOWN_ERROR			9 
 
 #define VERSION						"1.0"
 #ifdef _WIN32
@@ -24,6 +24,7 @@
 
 extern int verbosity;
 extern int quiet;
+extern int simpleOut;
 extern const char *prgName;
 
 #endif

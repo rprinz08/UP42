@@ -1,6 +1,9 @@
 {
     "version": "0.1.0",
-    "command": "./build.sh",
+    // for Linux
+    //"command": "./build.sh",
+    // for Windows
+    "command": "build.cmd",
     "args": [
     ],
     "tasks": [

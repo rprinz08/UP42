@@ -24,6 +24,7 @@
 
 int verbosity = 0;
 int quiet = 0;
+int simpleOut = 0;
 const char *prgName;
 
 
@@ -64,6 +65,7 @@ void showUsage(char *prgName, int exitCode) {
 	printf("-I,--info      Read board information\n");
 	printf("-P,--profile   Use model profile from config file\n");
 	printf("-q,--quiet     Be quiet. Dont output anything.\n");
+	printf("-s,--simple    Use simple console output.\n");
 	printf("-i,--input     Input file to send. If omitted or '-' stdin will be used\n");
 	printf("-x,--intelhex  Input file is not a binary but in INTEL hex");
 	printf("-o,--output    Output file after encryption with key. If '-' \n");
@@ -129,12 +131,33 @@ int main(int argc, const char **argv) {
 
 	setbuf(stdout, NULL);
 
+int xt = 1;
+for(double i=0; i < 100.0; i+=0.33) {
+	//printf("%f ", i);
+	int result = (int)( i / 10 );
+	float mod = (int)(i - ( result * 10));
+	//printf("%f\n", mod);
+	
+	//if((i % 10) == 0 && i > 0)
+	if(mod == 0) {
+		if(xt == 0) {
+			printInfo(LOG_NORMAL, stdout, "...%d%%", 
+				(i > 100 ? 100 : (int)i));
+			xt = 1;
+		}
+	}
+	else
+		xt = 0;
+}
+printf("...100%%\n");
+exitProgram(EXIT_OK);
 
 	// configure command-line options parsing
 	void *options = gopt_sort(&argc, argv, gopt_start(
 		gopt_option('h', 0, gopt_shorts('h', '?'), gopt_longs("help")),
 		gopt_option('V', 0, gopt_shorts('V'), gopt_longs("version")),
 		gopt_option('q', 0, gopt_shorts('q'), gopt_longs("quiet")),
+		gopt_option('s', 0, gopt_shorts('s'), gopt_longs("simple")),
 		gopt_option('v', GOPT_REPEAT, gopt_shorts('v'), gopt_longs("verbose")),
 		gopt_option('c', GOPT_ARG, gopt_shorts('c'), gopt_longs("config")),
 		gopt_option('I', 0, gopt_shorts('I'), gopt_longs("info")),
@@ -175,34 +198,10 @@ int main(int argc, const char **argv) {
 	printInfo(LOG_DEBUG, stdout, 
 		"Quiet (%d)\n", quiet);
 
-
-
-// -----------------------------------------------
-/*
-	printf("load hex\n");
-	int bl = load_file("test.hex");
-	
-	printf("save bin\n");
-	outputFile = fopen("test.bin", "wb");
-	fwrite(memory, bl, 1, outputFile);
-	fclose(outputFile);
-	
-	printf("save hex\n");
-	sprintf(wb, "S 0000 %04x test.hex.2", bl);
-	save_file(wb);
-*/
-/*
-	int bl = 0;
-	const char *tmpf = hex2bin("test.hex", NULL, &bl);
-	printf("out: %s; len: %d\n", tmpf, bl);	
-	exitProgram(EXIT_OK);
-*/
-// -----------------------------------------------
-
-
-
-
-
+	// simple console output
+	simpleOut = gopt(options, 's');
+	printInfo(LOG_DEBUG, stdout, 
+		"Simple output (%d)\n", simpleOut);
 
 	// DTR handling
 	noDTR = gopt(options, 'D');

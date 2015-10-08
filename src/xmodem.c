@@ -167,6 +167,7 @@ int xmodemTransmit(unsigned char *src, int srcsz)
 	int i, c, len = 0;
 	int retry;
 	double x;
+	int modRes, mod, modFlag;
 
 	for(;;) {
 		for( retry = 0; retry < 16; ++retry) {
@@ -198,11 +199,26 @@ int xmodemTransmit(unsigned char *src, int srcsz)
 
 		for(;;) {
 		start_trans:
-
-x = ((double)len / srcsz) * 100;
-//printf("Sent: %d from %d (%.2f%%)\n", len, srcsz, (x > 100.0 ? 100 : x));
-printInfo(LOG_NORMAL, stdout, "Sent %.2f%%    \r", (x > 100.0 ? 100 : x));
-
+			
+			x = ((double)len / srcsz) * 100;
+			if(!simpleOut) {
+				//printf("Sent: %d from %d (%.2f%%)\n", len, srcsz, (x > 100.0 ? 100 : x));
+				printInfo(LOG_NORMAL, stdout, "Sent %.2f%%    \r", 
+					(x > 100.0 ? 100 : x));
+			}
+			else {
+				modRes = (int)( x / 10 );
+				mod = (int)(x - ( modRes * 10));				
+				if(mod == 0) {
+					if(modFlag == 0) {
+						printInfo(LOG_NORMAL, stdout, "...%d%%", 
+							(x > 100 ? 100 : (int)x));
+						modFlag = 1;
+					}
+				}
+				else
+					modFlag = 0;
+			}
 			xbuff[0] = SOH; bufsz = 128;
 			xbuff[1] = packetno;
 			xbuff[2] = ~packetno;
