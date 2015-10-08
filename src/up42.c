@@ -19,10 +19,12 @@
 #include "xor.h"
 #include "serial.h"
 #include "walkera.h"
+#include "ihex.h"
 #include "tools.h"
 
 int verbosity = 0;
 int quiet = 0;
+const char *prgName;
 
 
 void exitProgram(int exitCode) {
@@ -63,6 +65,7 @@ void showUsage(char *prgName, int exitCode) {
 	printf("-P,--profile   Use model profile from config file\n");
 	printf("-q,--quiet     Be quiet. Dont output anything.\n");
 	printf("-i,--input     Input file to send. If omitted or '-' stdin will be used\n");
+	printf("-x,--intelhex  Input file is not a binary but in INTEL hex");
 	printf("-o,--output    Output file after encryption with key. If '-' \n");
 	printf("               stdout will be used.\n");
 	printf("               If no key specified outputFile == inputFile.\n");
@@ -90,11 +93,12 @@ int main(int argc, const char **argv) {
 	e4c_context_begin(E4C_FALSE);
 	e4c_context_set_handlers(UncaughtExceptionHandler, NULL, NULL, NULL);
 
-	const char *prgName = (char *)*argv;
+	prgName = (char *)*argv;
 	char *w = NULL;
 	char wb[MAX_STRING];
 	int l = 0;
 	int deleteTempOut = 0;
+	int deleteHexTempOut = 0;
 
 	const char *argument = NULL;
 
@@ -121,6 +125,7 @@ int main(int argc, const char **argv) {
 	int stopBits = ONESTOPBIT;
 	int noDTR = 0;
 	int onlyInfo = 0;
+	int inputIsHex = 0;
 
 	setbuf(stdout, NULL);
 
@@ -146,7 +151,8 @@ int main(int argc, const char **argv) {
 		gopt_option('N', 0, gopt_shorts('N'), gopt_longs("none")),
 		gopt_option('E', 0, gopt_shorts('E'), gopt_longs("even")),
 		gopt_option('O', 0, gopt_shorts('O'), gopt_longs("odd")),
-		gopt_option('D', 0, gopt_shorts('D'), gopt_longs("nodtr"))
+		gopt_option('D', 0, gopt_shorts('D'), gopt_longs("nodtr")),
+		gopt_option('x', 0, gopt_shorts('x'), gopt_longs("intelhex"))
 	));
 
 	// get command line options
@@ -169,11 +175,46 @@ int main(int argc, const char **argv) {
 	printInfo(LOG_DEBUG, stdout, 
 		"Quiet (%d)\n", quiet);
 
+
+
+// -----------------------------------------------
+/*
+	printf("load hex\n");
+	int bl = load_file("test.hex");
+	
+	printf("save bin\n");
+	outputFile = fopen("test.bin", "wb");
+	fwrite(memory, bl, 1, outputFile);
+	fclose(outputFile);
+	
+	printf("save hex\n");
+	sprintf(wb, "S 0000 %04x test.hex.2", bl);
+	save_file(wb);
+*/
+/*
+	int bl = 0;
+	const char *tmpf = hex2bin("test.hex", NULL, &bl);
+	printf("out: %s; len: %d\n", tmpf, bl);	
+	exitProgram(EXIT_OK);
+*/
+// -----------------------------------------------
+
+
+
+
+
+
 	// DTR handling
 	noDTR = gopt(options, 'D');
 	printInfo(LOG_DEBUG, stdout, 
 		"No DTR handling (%d)\n", noDTR);
 
+	// Input file is in INTEL hex format
+	inputIsHex = gopt(options, 'x');
+	printInfo(LOG_DEBUG, stdout, 
+		"Input file is INTEL HEX format (%d)\n", inputIsHex);
+
+	// only show board informations, dont flash
 	onlyInfo = gopt(options, 'I');
 	printInfo(LOG_DEBUG, stdout,
 		"Show only board infos (%d)\n", onlyInfo);
@@ -262,11 +303,27 @@ int main(int argc, const char **argv) {
 	// get input file name
 	if (onlyInfo == 0) {
 		gopt_arg(options, 'i', &inputFileName);
-		if (inputFileName) {
-			if (!strcmp(inputFileName, "-"))
+		if (inputFileName) {			
+			if (!strcmp(inputFileName, "-")) {
 				inputFile = stdin;
-			else
+				if(inputIsHex) {
+					printInfo(LOG_NORMAL, stderr,
+						"\nError: INTEL HEX mode not supported when using stdio as input\n");
+					exitProgram(EXIT_INPUT_FILE_ERROR);
+				}
+			}
+			else {
+				if(inputIsHex) {
+					// if specified input file is in INTEL HEX form convert
+					// it to binary first and use that as input
+					int bl = 0;
+					const char *tmpf = hex2bin(inputFileName, NULL, &bl);
+					inputFileName = tmpf;
+					deleteHexTempOut = 1;
+				}
+				
 				inputFile = fopen(inputFileName, "rb");
+			}
 
 			if (!inputFile) {
 				printError(stderr, "opening input file (%s)", inputFileName);
@@ -283,6 +340,7 @@ int main(int argc, const char **argv) {
 		inputFileName = NULL;
 	printInfo(LOG_DEBUG, stdout, 
 		"Input file (%s)\n", inputFileName);
+
 
 	// get output file name
 	if (onlyInfo == 0) {
@@ -459,16 +517,25 @@ int main(int argc, const char **argv) {
 			else
 				printInfo(LOG_NORMAL, stdout,
 				"%d bytes flashed\n", l);
-
-			if (deleteTempOut)
-				unlink(outputFileName);
 		}
 
 		// close port
 		disconnectBoard(portHandle);
 		serial_closePort(portHandle);
 	}
-
+	
+	// delete temporary files
+	if (deleteTempOut) {
+		printInfo(LOG_DEBUG, stdout,
+			"Delete temporary file (%s)\n", outputFileName);
+		unlink(outputFileName);
+	}
+	if (deleteHexTempOut) {
+		printInfo(LOG_DEBUG, stdout,
+			"Delete temporary file (%s)\n", inputFileName);
+		unlink(inputFileName);
+	}
+	
 	exitProgram(EXIT_OK);
 	return EXIT_OK;
 }

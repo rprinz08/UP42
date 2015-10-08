@@ -11,18 +11,19 @@
 #define EXIT_COMM_ERROR				7
 #define EXIT_UNKNOWN_ERROR			9
 
-#define VERSION					"1.0"
+#define VERSION						"1.0"
 #ifdef _WIN32
-#define OS						"Windows"
+#define OS							"Windows"
 #else
 #ifdef linux
-#define OS						"Linux"
+#define OS							"Linux"
 #else
-#define OS						"unknown"
+#define OS							"unknown"
 #endif
 #endif
 
 extern int verbosity;
 extern int quiet;
+extern const char *prgName;
 
 #endif

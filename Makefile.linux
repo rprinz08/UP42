@@ -5,11 +5,13 @@ CFLAGS=-DARCH='"$(ARCH)"' -MD -Wall -c
 
 SRCPATH=src
 BINPATH=bin/$(ARCH)
-SOURCES=up42.c walkera.c xor.c serial.c xmodem.c crc16.c gopt.c ini.c tools.c e4c.c
+SOURCES=up42.c walkera.c xor.c serial.c xmodem.c crc16.c gopt.c ini.c \
+	tools.c e4c.c ihex.c
 OBJECTS=$(SOURCES:%.c=$(BINPATH)/%.o)
 DEP=$(OBJECTS:.o=.d)
 -include $(DEP)
 EXECUTABLE=$(BINPATH)/up42
+.PHONY: all clean prepare
 
 all: prepare $(EXECUTABLE)
 
@@ -20,7 +22,7 @@ $(BINPATH)/%.o: $(SRCPATH)/%.c
 	$(CC) $(CFLAGS) $< -o $@
 
 prepare:
-	mkdir -p $(BINPATH)
+	-@mkdir -p $(BINPATH)
 
 clean:
-	rm -f $(BINPATH)/*
+	-@rm -f $(BINPATH)/*
