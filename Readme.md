@@ -32,9 +32,14 @@ Defines which profile should be used from the config file.
 ###-q,--quiet
 Be quiet. Dont output any messages except data.
 
+###-s,--simple
+Use simple console output (e.g. when running inside an IDE).
 
 ###-i,--input
 Input file to send. If '-' stdin will be used.
+
+###-x,--intelhex
+Input file is not a binary but in INTEL hex.
 
 ###-o,--output
 Output file after encryption with key. If '-' stdout will be used.
@@ -115,16 +120,16 @@ Building on Windows can be done in two ways:
 
 2. building using Microsoft Visual Studio. For building UP42 with Visual Studio there is a solution file (.sln) included. Open it with Visual Studio and compile it either for 32 or 64 bit.
 
-Prebuilt Windows binaries are available:
+Prebuilt Windows binaries for the current version 1.5 are available:
 
-1. [Version 1.0 for Windows 32 bit](http://www.min.at/prinz/fp-content/attachs/WinUP42-32-1_0.zip)
-2. [Version 1.0 for Windows 64 bit](http://www.min.at/prinz/fp-content/attachs/WinUP42-64-1_0.zip)
+1. [Version 1.5 for Windows 32 bit](http://www.min.at/prinz/fp-content/attachs/WinUP42-32-1_5.zip)
+2. [Version 1.5 for Windows 64 bit](http://www.min.at/prinz/fp-content/attachs/WinUP42-64-1_5.zip)
 
 ###Linux
 To build under Linux you can use the included `build.sh` shell script which uses make and gcc.
 
 
-Included is a **.settings** folder with [Visual Studio Code (VSCODE)](https://www.visualstudio.com/en-us/products/code-vs.aspx) settings allowing compiling UP42
+Included is a **.vscode** folder with [Visual Studio Code (VSCODE)](https://www.visualstudio.com/en-us/products/code-vs.aspx) settings allowing compiling UP42
 with TCC from inside VSCODE by pressing **CTRL+SHIFT+P** and **run task ...**. 
 
  
