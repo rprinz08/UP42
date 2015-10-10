@@ -159,15 +159,15 @@ int xmodemReceive(unsigned char *dest, int destsz)
 	}
 }
 
-int xmodemTransmit(unsigned char *src, int srcsz)
+int xmodemTransmit(unsigned char *src, int srcLen)
 {
 	unsigned char xbuff[1030]; /* 1024 for XModem 1k + 3 head chars + 2 crc + nul */
 	int bufsz, crc = -1;
 	unsigned char packetno = 1;
 	int i, c, len = 0;
 	int retry;
-	double x;
-	int modRes, mod, modFlag;
+	double pct;
+	int int10, lastInt = 0;
 
 	for(;;) {
 		for( retry = 0; retry < 16; ++retry) {
@@ -198,31 +198,27 @@ int xmodemTransmit(unsigned char *src, int srcsz)
 		return -2; /* no sync */
 
 		for(;;) {
-		start_trans:
-			
-			x = ((double)len / srcsz) * 100;
-			if(!simpleOut) {
-				//printf("Sent: %d from %d (%.2f%%)\n", len, srcsz, (x > 100.0 ? 100 : x));
-				printInfo(LOG_NORMAL, stdout, "Sent %.2f%%    \r", 
-					(x > 100.0 ? 100 : x));
+start_trans:
+			// show transferd bytes percentage			
+			pct = ((double)len / srcLen) * 100;
+			pct = (pct > 100.0 ? 100.0 : pct);
+			if(simpleOut) {
+				int10 = ((int)(pct / 10.0)) * 10;
+				if(int10 != lastInt) {
+					printInfo(LOG_NORMAL, stdout, "...%d%%", int10);
+					lastInt = int10;
+				}
 			}
 			else {
-				modRes = (int)( x / 10 );
-				mod = (int)(x - ( modRes * 10));				
-				if(mod == 0) {
-					if(modFlag == 0) {
-						printInfo(LOG_NORMAL, stdout, "...%d%%", 
-							(x > 100 ? 100 : (int)x));
-						modFlag = 1;
-					}
-				}
-				else
-					modFlag = 0;
+				//printf("Sent: %d from %d (%.2f%%)\n", len, srcLen, (pct > 100.0 ? 100 : pct));
+				printInfo(LOG_NORMAL, stdout, "Sent %.2f%%    \r", 
+					(pct > 100.0 ? 100 : pct));
 			}
+			
 			xbuff[0] = SOH; bufsz = 128;
 			xbuff[1] = packetno;
 			xbuff[2] = ~packetno;
-			c = srcsz - len;
+			c = srcLen - len;
 			if (c > bufsz) c = bufsz;
 			if (c >= 0) {
 				memset (&xbuff[3], 0, bufsz);

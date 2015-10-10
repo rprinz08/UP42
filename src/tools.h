@@ -12,8 +12,17 @@
 #define FALSE						0
 #define TRUE						1
 
+#ifdef _WIN32
+#define FOLDER_SEPARATOR			'\\'
+#elif defined (__linux__)  
+#define FOLDER_SEPARATOR			'/'
+#else
+#error Unknown OS, unable to define folder separator!
+#endif
+ 
 extern char *emptyString;
 
+extern const char *baseName(const char *s);
 extern int fileExists(const char *);
 extern unsigned long getMs();
 extern void delay(int);

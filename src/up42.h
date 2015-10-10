@@ -11,7 +11,7 @@
 #define EXIT_COMM_ERROR				7
 #define EXIT_UNKNOWN_ERROR			9 
 
-#define VERSION						"1.0"
+#define VERSION						"1.5"
 #ifdef _WIN32
 #define OS							"Windows"
 #else
@@ -25,6 +25,7 @@
 extern int verbosity;
 extern int quiet;
 extern int simpleOut;
+extern const char *prgFullName;
 extern const char *prgName;
 
 #endif

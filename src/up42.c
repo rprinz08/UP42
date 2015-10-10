@@ -25,6 +25,7 @@
 int verbosity = 0;
 int quiet = 0;
 int simpleOut = 0;
+const char *prgFullName;
 const char *prgName;
 
 
@@ -39,7 +40,7 @@ void exitProgram(int exitCode) {
 
 void UncaughtExceptionHandler(const e4c_exception *exception) {
 	printInfo(LOG_NORMAL, stderr, 
-		"\nError %s (%s)\n", exception->message, exception->name);
+		"Error: %s (%s)\n", exception->message, exception->name);
 	exitProgram(EXIT_UNKNOWN_ERROR);
 }
 
@@ -61,13 +62,14 @@ void showUsage(char *prgName, int exitCode) {
 	printf("-h,--help      Show this help screen.\n");
 	printf("-V,--version   Show version information.\n");
 	printf("-v,--verbose   Enable verbose mode.\n");
-	printf("-c,--config    Config file. Defaults to %s.ini\n", prgName);
-	printf("-I,--info      Read board information\n");
-	printf("-P,--profile   Use model profile from config file\n");
+	printf("-c,--config    Config file. Defaults to %s.ini.\n", prgName);
+	printf("-I,--info      Read board information.\n");
+	printf("-P,--profile   Use model profile from config file.\n");
 	printf("-q,--quiet     Be quiet. Dont output anything.\n");
-	printf("-s,--simple    Use simple console output.\n");
-	printf("-i,--input     Input file to send. If omitted or '-' stdin will be used\n");
-	printf("-x,--intelhex  Input file is not a binary but in INTEL hex");
+	printf("-s,--simple    Use simple console output (e.g. running inside an IDE).\n");
+	printf("-i,--input     Input file to send. If omitted or '-' stdin will be used.\n");
+	printf("-x,--intelhex  Input file is not a binary but in INTEL hex.\n");
+	printf("               This option is not compatible with input stdin '-'.\n");
 	printf("-o,--output    Output file after encryption with key. If '-' \n");
 	printf("               stdout will be used.\n");
 	printf("               If no key specified outputFile == inputFile.\n");
@@ -75,13 +77,13 @@ void showUsage(char *prgName, int exitCode) {
 	printf("               * a hex string starting with '0x'\n");
 	printf("               * the name of a file which content is used as key\n");
 	printf("               * if not hex or file the character string itself\n");
-	printf("               If omitted no encryption is performed on input\n");
+	printf("               If omitted no encryption is performed on input.\n");
 	printf("-p,--port      Name of the port to send the encrypted output file\n");
-	printf("               via XModem to. If omitted nothing will be sent\n");
+	printf("               via XModem to. If omitted nothing will be sent.\n");
 	printf("-b,--baud      Baude rate to use. Defaults to 9600.\n");
-	printf("-1,-2          1 or 2 stop bits\n");
-	printf("-7,-8          7 or 8 data bits\n");
-	printf("-N,-E,-O       No, Even or Odd parity\n");
+	printf("-1,-2          1 or 2 stop bits.\n");
+	printf("-7,-8          7 or 8 data bits.\n");
+	printf("-N,-E,-O       No, Even or Odd parity.\n");
 	printf("-D,--nodtr     Disable DTR control.\n");
 	printf("\n");
 
@@ -95,7 +97,8 @@ int main(int argc, const char **argv) {
 	e4c_context_begin(E4C_FALSE);
 	e4c_context_set_handlers(UncaughtExceptionHandler, NULL, NULL, NULL);
 
-	prgName = (char *)*argv;
+	prgFullName = (char *)*argv;
+	prgName = baseName(prgFullName);
 	char *w = NULL;
 	char wb[MAX_STRING];
 	int l = 0;
@@ -130,27 +133,6 @@ int main(int argc, const char **argv) {
 	int inputIsHex = 0;
 
 	setbuf(stdout, NULL);
-
-int xt = 1;
-for(double i=0; i < 100.0; i+=0.33) {
-	//printf("%f ", i);
-	int result = (int)( i / 10 );
-	float mod = (int)(i - ( result * 10));
-	//printf("%f\n", mod);
-	
-	//if((i % 10) == 0 && i > 0)
-	if(mod == 0) {
-		if(xt == 0) {
-			printInfo(LOG_NORMAL, stdout, "...%d%%", 
-				(i > 100 ? 100 : (int)i));
-			xt = 1;
-		}
-	}
-	else
-		xt = 0;
-}
-printf("...100%%\n");
-exitProgram(EXIT_OK);
 
 	// configure command-line options parsing
 	void *options = gopt_sort(&argc, argv, gopt_start(
@@ -221,7 +203,7 @@ exitProgram(EXIT_OK);
 	// get config file name
 	gopt_arg(options, 'c', &configFileName);
 	if(!configFileName)
-		configFileName = (const char *)formatString("%s.ini", prgName);
+		configFileName = (const char *)formatString("%s.ini", prgFullName);
 	printInfo(LOG_DEBUG, stdout, 
 		"Config file (%s)\n", configFileName);
 	if(!fileExists((char *)configFileName)) {
@@ -307,7 +289,7 @@ exitProgram(EXIT_OK);
 				inputFile = stdin;
 				if(inputIsHex) {
 					printInfo(LOG_NORMAL, stderr,
-						"\nError: INTEL HEX mode not supported when using stdio as input\n");
+						"Error: INTEL HEX mode not supported when using stdio as input\n");
 					exitProgram(EXIT_INPUT_FILE_ERROR);
 				}
 			}
@@ -331,7 +313,7 @@ exitProgram(EXIT_OK);
 		}
 		else {
 			printInfo(LOG_NORMAL, stderr,
-				"\nError: No input file specified!\n");
+				"Error: No input file specified!\n");
 			exitProgram(EXIT_INPUT_FILE_ERROR);
 		}
 	}
@@ -354,7 +336,7 @@ exitProgram(EXIT_OK);
 			if (!strcmp(outputFileName, "-")) {
 				if (port) {
 					printInfo(LOG_NORMAL, stderr,
-						"\nError: stdout as output file can only be specified without port.\n");
+						"Error: stdout as output file can only be specified without port.\n");
 					exitProgram(EXIT_OUTPUT_FILE_ERROR);
 				}
 				outputFile = stdout;
@@ -398,7 +380,7 @@ exitProgram(EXIT_OK);
 		baud = (int)strtol(argument, &w, 0);
 		if(w == argument) {
 			printInfo(LOG_NORMAL, stderr, 
-				"\nError: (%s) invalid baud rate\n", argument);
+				"Error: (%s) invalid baud rate\n", argument);
 			exitProgram(EXIT_BAUD_ERROR);
 		}
 	}
@@ -475,47 +457,54 @@ exitProgram(EXIT_OK);
 					(stopBits == 1 ? "1.5" :
 						(stopBits == 2 ? "2" : "-"))));
 
+		// connect to board
 		printInfo(LOG_NORMAL, stdout,
-			"\nTry to connect to walkera receiver: ");
+			"Connecting ");
 
 		// reset board via serial DTR low
 		if(!noDTR) {
 			if(serial_setDTR(portHandle, 1))
 				printInfo(LOG_NORMAL, stderr,
-					"\nUnable to clear DTR\n");
+					"\nError: Unable to clear DTR on port (%s)\n", port);
 			delay(1000);
 			if(serial_setDTR(portHandle, 0))
 				printInfo(LOG_NORMAL, stderr,
-					"\nUnable to set DTR\n");
+					"\nError: Unable to set DTR on port(%s)\n", port);
 		}
 
 		// connect to board bootloader
 		int isConnected = connectBoard(portHandle, 10000, 1);
+		if(verbosity < LOG_COMM)
+			printInfo(LOG_NORMAL, stdout, "\n");
+					
 		if(!isConnected) {
 			printInfo(LOG_NORMAL, stderr, 
-				"\nError unable to connect on port (%s)\n", port);
+				"Error: unable to connect on port (%s)\n", port);
 			exitProgram(EXIT_COMM_ERROR);
 		}
-		printInfo(LOG_NORMAL, stdout,
-			"\n");
 
 		// query board info
 		if(getBoardInfo(portHandle, 10000, (char *)&wb, MAX_STRING) < 0)
 			printInfo(LOG_NORMAL, stderr,
-				"Warning unable to identify receiver board\n");
+				"Warning: unable to identify receiver board\n");
 		else
 			printInfo(LOG_NORMAL, stdout,
 				"Connected to: %s\n", wb);
 
+		// Flash firmware only if not requesting board infos
 		if (onlyInfo == 0) {
+			printInfo(LOG_NORMAL, stdout, "Flashing ");
+			
 			// flash firmware
 			l = flashBoard(portHandle, 10000, outputFileName);
+			printInfo(LOG_NORMAL, stdout, "\n");			
+			
 			if (l < 0)
 				printInfo(LOG_NORMAL, stderr,
-				"Warning unable to flash board\n");
+					"Warning: unable to flash board\n");
 			else
 				printInfo(LOG_NORMAL, stdout,
-				"%d bytes flashed\n", l);
+					"Flashed %d bytes\n", l);
 		}
 
 		// close port

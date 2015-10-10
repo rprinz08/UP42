@@ -38,6 +38,22 @@ typedef struct s_freeTableEntry freeTableEntry;
 freeTableEntry *freeTable = NULL;
 
 /*------------------------------------------------------------
+        get filename from full qualified path
+        eg: /usr/local/bin/test returns just test
+  ------------------------------------------------------------*/
+const char *baseName(const char *s)
+{
+   const char *p;
+
+   p = strrchr(s, FOLDER_SEPARATOR);
+   if (p)
+      p++;
+   else
+      p = s;
+   return p;
+}
+
+/*------------------------------------------------------------
         checks if a file exists and is readable
   ------------------------------------------------------------*/
 int fileExists(const char *s) {
@@ -204,6 +220,11 @@ void printInfo(int level, FILE *file, const char *message, ...) {
 	va_start(argp, message);
 	vfprintf(file, message, argp);
 	va_end(argp);
+	
+	if(simpleOut) {
+		if(file == stdout || file == stderr)
+			delay(300);		
+	}
 }
 
 void printError(FILE *file, const char *message, ...) {
@@ -263,13 +284,24 @@ char *getTempFile(char *prefix) {
 	//char *tempFileName;
 
 	dwRetVal = GetTempPath(MAX_PATH, lpTempPathBuffer);
-	if(dwRetVal > MAX_PATH || (dwRetVal == 0))
-		throw(NotEnoughMemoryException, "Unable creating temp file");
-
+	if(dwRetVal > MAX_PATH) {
+		throw(NotEnoughMemoryException, "Unable creating temp file; path too long");
+	}
+	if(dwRetVal == 0) {
+		printError(stderr, "Unable creating temp file (path)");
+		throw(NotEnoughMemoryException, "Unable creating temp file (path)");
+	}
+	printInfo(LOG_DEBUG, stdout,
+		"Temp file path (%s)\n", lpTempPathBuffer);
+				
 	uRetVal = GetTempFileName(lpTempPathBuffer, prefix,
                               0, szTempFileName); 
-	if(uRetVal == 0)
-		throw(NotEnoughMemoryException, "Unable creating temp file");
+	if(uRetVal == 0) {
+		printError(stderr, "Unable creating temp file");
+		throw(NotEnoughMemoryException, "Unable creating temp file (file)");
+	}
+	printInfo(LOG_DEBUG, stdout,
+		"Temp file (%s)\n", szTempFileName);
 
 	l = strlen(szTempFileName);
 	//tempFileName = (char *)calloc(l + 1, 1);

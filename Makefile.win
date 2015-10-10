@@ -6,8 +6,7 @@ SHELL=C:/Windows/System32/cmd.exe
 
 SRCPATH=src
 BINPATH=bin\$(ARCH)
-SOURCES=up42.c walkera.c xor.c serial.c xmodem.c crc16.c gopt.c ini.c \
-	tools.c e4c.c ihex.c
+SOURCES=up42.c walkera.c xor.c serial.c xmodem.c crc16.c gopt.c ini.c tools.c e4c.c ihex.c
 OBJECTS=$(SOURCES:%.c=$(BINPATH)/%.o)
 DEP=$(OBJECTS:.o=.d)
 -include $(DEP)
@@ -24,8 +23,8 @@ $(BINPATH)/%.o: $(SRCPATH)/%.c
 	$(CC) $(CFLAGS) $< -o $@
 
 prepare:
-	-@mkdir "$(BINPATH)" >nul 2>&1 || true
+	-@mkdir "$(BINPATH)" >nul 2>&1 || echo.
 	
 clean:
-	-@rmdir /Q /S "$(BINPATH)" >nul 2>&1 || true
+	-@rmdir /Q /S "$(BINPATH)" >nul 2>&1 || echo.
 
