@@ -1,5 +1,6 @@
 BIT=$(shell getconf LONG_BIT)
 ARCH=ia$(BIT)
+#$(warning $(ARCH) $(origin ARCH))
 CC=gcc
 CFLAGS=-DARCH='"$(ARCH)"' -MD -Wall -c
 
