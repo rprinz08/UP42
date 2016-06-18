@@ -2,7 +2,8 @@ BIT=$(shell getconf LONG_BIT)
 ARCH=ia$(BIT)
 #$(warning $(ARCH) $(origin ARCH))
 CC=gcc
-CFLAGS=-DARCH='"$(ARCH)"' -MD -Wall -c
+CFLAGS=-DARCH='"$(ARCH)"' -MD -m$(subst ia,,$(ARCH)) -Wall -c
+LDFLAGS=-m$(subst ia,,$(ARCH))
 
 SRCPATH=src
 BINPATH=bin/$(ARCH)

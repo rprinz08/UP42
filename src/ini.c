@@ -27,12 +27,13 @@ int read_line(FILE *fp, char *bp)
     char c = '\0';
     int i = 0;
 
-    /* Read one line from the source file */
-    //while( (c = getc(fp)) != '\n' ) {
-    while( (c = getc(fp)) >= 32 ) {
-         if( c == EOF )         /* return FALSE on unexpected EOF */
-              return(0);
-         bp[i++] = c;
+    // Read one line from the source file
+    while( (c = getc(fp)) != '\n' ) {
+    //while( (c = getc(fp)) >= 32 ) {
+        // return FALSE on unexpected EOF
+        if( c == EOF )
+            return(0);
+        bp[i++] = c;
     }
     bp[i] = '\0';
     return(1);
@@ -61,32 +62,45 @@ int get_private_profile_int(const char *section, const char *entry,
 
     if( !fp )
          return(0);
-    sprintf(t_section,"[%s]",section); /* Format the section name */
-    /*  Move through file 1 line at a time until a section is matched or EOF */
+
+    // Format the section name
+    sprintf(t_section, "[%s]", section);
+printf("search for section (%s)\n", t_section);
+
+    // Move through file 1 line at a time until a section is
+    // matched or EOF
     do {
-         if( !read_line(fp,buff) ) {
-              fclose(fp);
-              return(def);
-         }
-    } while( STRICMP(buff,t_section) != 0 );
-    /* Now that the section has been found, find the entry.
-	* Stop searching upon leaving the section's area. */
+        if( !read_line(fp, buff) ) {
+            fclose(fp);
+            return(def);
+        }
+printf("line read (%s)\n", buff);
+    } while( STRICMP(buff, t_section) != 0 );
+
+    // Now that the section has been found, find the entry.
+	// Stop searching upon leaving the section's area.
     do {
 	    if( !read_line(fp,buff) || buff[0] == '[' ) {
 		    fclose(fp);
 		    return(def);
 	    }
     } while( STRNICMP(buff,entry,len) != 0 );
-    ep = strchr(buff,'=');    /* Parse out the equal sign */
-    ep++;
-    if( !strlen(ep) )          /* No setting? */
-	    return(def);
-    /* Copy only numbers fail on characters */
 
+    // Parse out the equal sign
+    ep = strchr(buff,'=');
+    ep++;
+
+    // No setting?
+    if( !strlen(ep) )
+	    return(def);
+
+    // Copy only numbers fail on characters
     for(i = 0; isdigit(ep[i]); i++ )
 	    value[i] = ep[i];
     value[i] = '\0';
-    fclose(fp);                /* Clean up and return the value */
+
+    // Clean up and return the value
+    fclose(fp);
     return(atoi(value));
 }
 
@@ -114,40 +128,58 @@ int get_private_profile_string(const char *section, const char *entry, char *def
 
     if( !fp )
          return(0);
-    sprintf(t_section,"[%s]",section);    /* Format the section name */
-    /*  Move through file 1 line at a time until a section is matched or EOF */
+
+    // Format the section name
+    sprintf(t_section,"[%s]",section);
+printf("search for section (%s)\n", t_section);
+
+    // Move through file 1 line at a time until a section is
+    // matched or EOF
     do {
-         if( !read_line(fp,buff) ) {
+         if( !read_line(fp, buff) ) {
               fclose(fp);
+
               if(def == NULL)
                 return 0;
-              strncpy(buffer,def,buffer_len);
+
+              strncpy(buffer, def, buffer_len);
               return(strlen(buffer));
          }
+printf("1 line read (%s)\n", buff);
     }
     while( STRICMP(buff,t_section) );
-    /* Now that the section has been found, find the entry.
-     * Stop searching upon leaving the section's area. */
+
+    // Now that the section has been found, find the entry.
+    // Stop searching upon leaving the section's area.
+printf("search for entry (%s)\n", entry);
     do {
-	    if( !read_line(fp,buff) || buff[0] == '[' ) {
+	    if( !read_line(fp, buff) || buff[0] == '[' ) {
 		    fclose(fp);
+
             if(def == NULL)
                 return 0;
-		    strncpy(buffer,def,buffer_len);
+
+		    strncpy(buffer, def, buffer_len);
 		    return(strlen(buffer));
 	    }
-    } while( STRNICMP(buff,entry,len) != 0 );
-    ep = strchr(buff,'=');    /* Parse out the equal sign */
+printf("2 line read (%s)\n", buff);
+    } while( STRNICMP(buff, entry, len) != 0 );
+
+    // Parse out the equal sign
+    ep = strchr(buff,'=');
     ep++;
     p=buffer;
-    /* Copy up to buffer_len chars to buffer */
+
+    // Copy up to buffer_len chars to buffer
     i=1;
     while(*ep != '\0' && i <= buffer_len-1) {
-            *buffer++ = *ep++;
-            i++;
+        *buffer++ = *ep++;
+        i++;
     }
     *buffer='\0';
-    fclose(fp);               /* Clean up and return the amount copied */
+
+    // Clean up and return the amount copied
+    fclose(fp);
     return(strlen(p));
 }
 
