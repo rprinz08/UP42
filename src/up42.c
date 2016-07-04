@@ -302,7 +302,7 @@ int main(int argc, const char **argv) {
 					inputFileName = tmpf;
 					deleteHexTempOut = 1;
 				}
-				
+
 				inputFile = fopen(inputFileName, "rb");
 			}
 
@@ -444,6 +444,12 @@ int main(int argc, const char **argv) {
 			printError(stderr, "opening port (%s)", port);
 			exitProgram(EXIT_COMM_ERROR);
 		}
+        printInfo(LOG_DEBUG, stdout,
+	        "Set port DTR low\n");
+		if(serial_setDTR(portHandle, 0))
+			printInfo(LOG_NORMAL, stderr,
+				"\nError: Unable to set DTR on port(%s)\n", port);
+
 		printInfo(LOG_DEBUG, stdout, 
 			"Serial port (%s) opend (%d,%c,%d,%s)\n", 
 				port, baud,
@@ -463,10 +469,16 @@ int main(int argc, const char **argv) {
 
 		// reset board via serial DTR low
 		if(!noDTR) {
+	        printInfo(LOG_DEBUG, stdout,
+		        "Set port DTR high\n");
 			if(serial_setDTR(portHandle, 1))
 				printInfo(LOG_NORMAL, stderr,
 					"\nError: Unable to clear DTR on port (%s)\n", port);
+
 			delay(1000);
+
+	        printInfo(LOG_DEBUG, stdout,
+		        "Set port DTR low\n");
 			if(serial_setDTR(portHandle, 0))
 				printInfo(LOG_NORMAL, stderr,
 					"\nError: Unable to set DTR on port(%s)\n", port);
@@ -476,12 +488,16 @@ int main(int argc, const char **argv) {
 		int isConnected = connectBoard(portHandle, 10000, 1);
 		if(verbosity < LOG_COMM)
 			printInfo(LOG_NORMAL, stdout, "\n");
-					
+
 		if(!isConnected) {
 			printInfo(LOG_NORMAL, stderr, 
 				"Error: unable to connect on port (%s)\n", port);
 			exitProgram(EXIT_COMM_ERROR);
 		}
+
+#ifdef linux
+        serial_resetPort(portHandle);
+#endif
 
 		// query board info
 		if(getBoardInfo(portHandle, 10000, (char *)&wb, MAX_STRING) < 0)
@@ -494,14 +510,14 @@ int main(int argc, const char **argv) {
 		// Flash firmware only if not requesting board infos
 		if (onlyInfo == 0) {
 			printInfo(LOG_NORMAL, stdout, "Flashing ");
-			
+
 			// flash firmware
 			l = flashBoard(portHandle, 10000, outputFileName);
-			printInfo(LOG_NORMAL, stdout, "\n");			
-			
+			printInfo(LOG_NORMAL, stdout, "\n");
+
 			if (l < 0)
 				printInfo(LOG_NORMAL, stderr,
-					"Warning: unable to flash board\n");
+					"Warning: unable to flash board (%d)\n", l);
 			else
 				printInfo(LOG_NORMAL, stdout,
 					"Flashed %d bytes\n", l);
@@ -511,7 +527,7 @@ int main(int argc, const char **argv) {
 		disconnectBoard(portHandle);
 		serial_closePort(portHandle);
 	}
-	
+
 	// delete temporary files
 	if (deleteTempOut) {
 		printInfo(LOG_DEBUG, stdout,
@@ -523,7 +539,7 @@ int main(int argc, const char **argv) {
 			"Delete temporary file (%s)\n", inputFileName);
 		unlink(inputFileName);
 	}
-	
+
 	exitProgram(EXIT_OK);
 	return EXIT_OK;
 }

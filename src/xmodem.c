@@ -199,7 +199,7 @@ int xmodemTransmit(unsigned char *src, int srcLen)
 
 		for(;;) {
 start_trans:
-			// show transferd bytes percentage			
+			// show transferd bytes percentage
 			pct = ((double)len / srcLen) * 100;
 			pct = (pct > 100.0 ? 100.0 : pct);
 			if(simpleOut) {
@@ -211,10 +211,10 @@ start_trans:
 			}
 			else {
 				//printf("Sent: %d from %d (%.2f%%)\n", len, srcLen, (pct > 100.0 ? 100 : pct));
-				printInfo(LOG_NORMAL, stdout, "Sent %.2f%%    \r", 
+				printInfo(LOG_NORMAL, stdout, "Sent %.2f%%    \r",
 					(pct > 100.0 ? 100 : pct));
 			}
-			
+
 			xbuff[0] = SOH; bufsz = 128;
 			xbuff[1] = packetno;
 			xbuff[2] = ~packetno;

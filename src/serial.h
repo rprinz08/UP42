@@ -17,6 +17,9 @@
 #endif
 
 extern HANDLE serial_openPort(const char *, int, unsigned char, unsigned char, unsigned char); 
+#ifdef linux
+extern void serial_resetPort(HANDLE);
+#endif
 extern void serial_closePort(HANDLE);
 extern int _inbyte(unsigned short);
 extern int serial_inByte(HANDLE, unsigned short);

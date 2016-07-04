@@ -65,7 +65,6 @@ int get_private_profile_int(const char *section, const char *entry,
 
     // Format the section name
     sprintf(t_section, "[%s]", section);
-printf("search for section (%s)\n", t_section);
 
     // Move through file 1 line at a time until a section is
     // matched or EOF
@@ -74,7 +73,6 @@ printf("search for section (%s)\n", t_section);
             fclose(fp);
             return(def);
         }
-printf("line read (%s)\n", buff);
     } while( STRICMP(buff, t_section) != 0 );
 
     // Now that the section has been found, find the entry.
@@ -130,8 +128,7 @@ int get_private_profile_string(const char *section, const char *entry, char *def
          return(0);
 
     // Format the section name
-    sprintf(t_section,"[%s]",section);
-printf("search for section (%s)\n", t_section);
+    sprintf(t_section, "[%s]", section);
 
     // Move through file 1 line at a time until a section is
     // matched or EOF
@@ -145,13 +142,11 @@ printf("search for section (%s)\n", t_section);
               strncpy(buffer, def, buffer_len);
               return(strlen(buffer));
          }
-printf("1 line read (%s)\n", buff);
     }
     while( STRICMP(buff,t_section) );
 
     // Now that the section has been found, find the entry.
     // Stop searching upon leaving the section's area.
-printf("search for entry (%s)\n", entry);
     do {
 	    if( !read_line(fp, buff) || buff[0] == '[' ) {
 		    fclose(fp);
@@ -162,7 +157,6 @@ printf("search for entry (%s)\n", entry);
 		    strncpy(buffer, def, buffer_len);
 		    return(strlen(buffer));
 	    }
-printf("2 line read (%s)\n", buff);
     } while( STRNICMP(buff, entry, len) != 0 );
 
     // Parse out the equal sign

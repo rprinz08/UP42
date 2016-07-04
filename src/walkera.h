@@ -1,7 +1,7 @@
 #ifndef _WALKERA_H_
 #define _WALKERA_H_
 
-#define POLL_TIME		500
+#define POLL_TIME		100
 
 extern int connectBoard(HANDLE, int, char);
 extern void disconnectBoard(HANDLE);

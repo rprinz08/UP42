@@ -34,9 +34,9 @@ int connectBoard(HANDLE portHandle, int timeoutMs, char showStatus) {
 				printInfo(LOG_NORMAL, stdout, ".");
 		}
 
-		inb = serial_inByte(portHandle, POLL_TIME);
-		if(inb < -1)
-			return 0;
+		inb = serial_inByte(portHandle, 1);
+		//if(inb < -1)
+		//	return 0;
 		//if(inb == -1)
 		//	delay(ph);
 

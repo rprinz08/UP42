@@ -94,9 +94,11 @@ void delay(int ms) {
 #endif
 #ifdef linux
 #if _POSIX_C_SOURCE >= 199309L
+    int s = ms / 1000;
+    int n = ms - (s * 1000);
 	struct timespec ts;
-	ts.tv_sec = 0;
-	ts.tv_nsec = ms * 1000000;
+	ts.tv_sec = s;
+	ts.tv_nsec = n * 1000000;
 	nanosleep(&ts, NULL);
 #else
 	usleep(ms * 1000);

@@ -161,13 +161,21 @@ HANDLE serial_openPort(const char *portName, int baud,
 	newtio.c_oflag = 0;
 	newtio.c_lflag = 0;
 	newtio.c_cc[VMIN] = 0;
-	newtio.c_cc[VTIME] = 5;
+	newtio.c_cc[VTIME] = 1;
 	tcflush(portHandle, TCIFLUSH);
 	tcsetattr(portHandle, TCSANOW, &newtio);
 #endif
 	_portHandle = portHandle;
 	return portHandle;
 }
+
+#ifdef linux
+void serial_resetPort(HANDLE portHandle) {
+	newtio.c_cc[VTIME] = 5;
+	tcflush(portHandle, TCIFLUSH);
+	tcsetattr(portHandle, TCSANOW, &newtio);
+}
+#endif
 
 void serial_closePort(HANDLE portHandle) {
 #ifdef _WIN32
@@ -205,7 +213,7 @@ int serial_inByte(HANDLE portHandle, unsigned short timeoutMs) {
 	readBytes = read(portHandle, &ch, 1);
 #endif
 	printInfo(LOG_COMM, stdout,
-		"< %3d %c 0x%02x\n", readBytes, (ch < 31 ? '.' : ch), ch);
+		"< %3ld %c 0x%02x\n", readBytes, (ch < 31 ? '.' : ch), ch);
 
 	if(readBytes == 0)
 		return -1;
@@ -230,7 +238,7 @@ void serial_outByte(HANDLE portHandle, unsigned char c) {
 	wroteBytes = write(portHandle, &c, 1);
 #endif
 	printInfo(LOG_COMM, stdout,
-		"> %3d %c 0x%02x\n", wroteBytes, (ch < 31 ? '.' : ch), ch);
+		"> %3ld %c 0x%02x\n", wroteBytes, (ch < 31 ? '.' : ch), ch);
 }
 
 int serial_setDTR(HANDLE portHandle, unsigned char DTR) {
