@@ -216,6 +216,12 @@ int main(int argc, const char **argv) {
 
 	// get profile parameters
 	if(gopt_arg(options, 'P', &profileName)) {
+		if (!configFileName) {
+			printInfo(LOG_NORMAL, stderr,
+				"Error: -P,--profile option needs existing config file. Use -v for more infos.\n");
+			exitProgram(EXIT_CONFIG_FILE_ERROR);
+		}
+		
 		printInfo(LOG_DEBUG, stdout, 
 			"---------- Profile (%s) ----------\n", profileName);
 
