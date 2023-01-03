@@ -6,3 +6,6 @@
 /*.opensdf
 /.vscode/.browse*
 /*.VC.*
+**/*.old
+**/*.o
+**/*.d

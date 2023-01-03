@@ -1,5 +1,5 @@
 {
-    "version": "0.1.0",
+    "version": "2.0.0",
     "command": "build",
     "windows": {
         "command": "build.cmd"
@@ -11,9 +11,42 @@
     ],
     "tasks": [
         {
-            "taskName": "build",
-            "suppressTaskName": true,
-            "args": [ "all" ],
+            "label": "build",
+            "args": [
+                "all"
+            ],
+            "problemMatcher": {
+                "owner": "cpp",
+                "fileLocation": [
+                    "relative",
+                    "${workspaceRoot}"
+                ],
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "severity": 3,
+                    "message": 4
+                }
+            },
+            "group": {
+                "_id": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "clean",
+            "args": [
+                "clean"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "make 32",
+            "args": [
+                "all",
+                "ia32"
+            ],
             "problemMatcher": {
                 "owner": "cpp",
                 "fileLocation": [
@@ -30,14 +63,19 @@
             }
         },
         {
-            "taskName": "clean",
-            "suppressTaskName": true,
-            "args": [ "clean" ]
+            "label": "clean 32",
+            "args": [
+                "clean",
+                "ia32"
+            ],
+            "problemMatcher": []
         },
         {
-            "taskName": "make 32",
-            "suppressTaskName": true,
-            "args": [ "all", "ia32" ],
+            "label": "make 64",
+            "args": [
+                "all",
+                "ia64"
+            ],
             "problemMatcher": {
                 "owner": "cpp",
                 "fileLocation": [
@@ -54,33 +92,12 @@
             }
         },
         {
-            "taskName": "clean 32",
-            "suppressTaskName": true,
-            "args": [ "clean", "ia32" ]
-        },
-        {
-            "taskName": "make 64",
-            "suppressTaskName": true,
-            "args": [ "all", "ia64" ],
-            "problemMatcher": {
-                "owner": "cpp",
-                "fileLocation": [
-                    "relative",
-                    "${workspaceRoot}"
-                ],
-                "pattern": {
-                    "regexp": "^(.*):(\\d+):\\s+(warning|error):\\s+(.*)$",
-                    "file": 1,
-                    "line": 2,
-                    "severity": 3,
-                    "message": 4
-                }
-            }
-        },
-        {
-            "taskName": "clean 64",
-            "suppressTaskName": true,
-            "args": [ "clean", "ia64" ]
+            "label": "clean 64",
+            "args": [
+                "clean",
+                "ia64"
+            ],
+            "problemMatcher": []
         }
     ]
 }
