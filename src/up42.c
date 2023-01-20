@@ -444,7 +444,7 @@ int main(int argc, const char **argv) {
 
     // connect to board
     printInfo(LOG_NORMAL, stdout, "Connecting ...%c",
-      (verbosity >= LOG_DEBUG ? '\n' : ' '));
+      (verbosity >= LOG_DEBUG ? '\n' : '\0'));
 
     // reset board via serial DTR low
     if (!noDTR) {
@@ -485,7 +485,7 @@ int main(int argc, const char **argv) {
 
     // Flash firmware only if not requesting board infos
     if (onlyInfo == 0) {
-      printInfo(LOG_NORMAL, stdout, "Flashing ");
+      printInfo(LOG_NORMAL, stdout, "Flashing ...\n");
 
       // flash firmware
       l = flashBoard(portHandle, 10000, outputFileName);

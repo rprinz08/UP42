@@ -12,7 +12,7 @@
  *     * Neither the name of the University of California, Berkeley nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- *  
+ *
  * THIS SOFTW ARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -23,7 +23,7 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */ 
+ */
 
 /* this code needs standard functions memcpy() and memset()
    and input/output functions _inbyte() and _outbyte().
@@ -130,7 +130,7 @@ int xmodemReceive(unsigned char *dest, int destsz)
 			*p++ = c;
 		}
 
-		if (xbuff[1] == (unsigned char)(~xbuff[2]) && 
+		if (xbuff[1] == (unsigned char)(~xbuff[2]) &&
 			(xbuff[1] == packetno || xbuff[1] == (unsigned char)packetno-1) &&
 			check(crc, &xbuff[3], bufsz)) {
 			if (xbuff[1] == packetno)	{
@@ -205,13 +205,14 @@ start_trans:
 			if(simpleOut) {
 				int10 = ((int)(pct / 10.0)) * 10;
 				if(int10 != lastInt) {
-					printInfo(LOG_NORMAL, stdout, "...%d%%", int10);
+					printInfo(LOG_NORMAL, stdout, "...%d%%%c",
+						int10, (verbosity >= LOG_COMM ? '\n' : '\0'));
 					lastInt = int10;
 				}
 			}
 			else {
 				//printf("Sent: %d from %d (%.2f%%)\n", len, srcLen, (pct > 100.0 ? 100 : pct));
-				printInfo(LOG_NORMAL, stdout, "Sent %.2f%%    \r",
+				printInfo(LOG_NORMAL, stdout, "Sent %.2f%%      \r",
 					(pct > 100.0 ? 100 : pct));
 			}
 

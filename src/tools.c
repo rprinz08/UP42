@@ -123,7 +123,7 @@ void addFreeTable(void *element) {
 		freeTable = e;
 	}
 
-	printInfo(LOG_MEM, stdout, 
+	printInfo(LOG_MEM, stdout,
 		"FreeTable: Added (%s)\n", element);
 }
 
@@ -135,7 +135,7 @@ void freeTableElement(void *element) {
 	while(e != NULL && e != element)
 		e = e->prev;
 	if(e == element) {
-		printInfo(LOG_MEM, stdout, 
+		printInfo(LOG_MEM, stdout,
 			"FreeTable: Deleted (%s)\n", e->element);
 		if(e->element != NULL)
 			free(e->element);
@@ -154,7 +154,7 @@ void freeAllTable() {
 	while(e != NULL) {
 		p = e->prev;
 
-		printInfo(LOG_MEM, stdout, 
+		printInfo(LOG_MEM, stdout,
 			"FreeTable: Deleted (%s)\n", e->element);
 		if(e->element != NULL)
 			free(e->element);
@@ -222,11 +222,6 @@ void printInfo(int level, FILE *file, const char *message, ...) {
 	va_start(argp, message);
 	vfprintf(file, message, argp);
 	va_end(argp);
-	
-	if(simpleOut) {
-		if(file == stdout || file == stderr)
-			delay(300);		
-	}
 }
 
 void printError(FILE *file, const char *message, ...) {
@@ -241,8 +236,8 @@ void printError(FILE *file, const char *message, ...) {
 	char *ptr = NULL;
 
 #ifdef _WIN32
-	// Retrieve, format, and print out a message from the last error. The 
-	// `message' that's passed should be in the form of a present tense noun 
+	// Retrieve, format, and print out a message from the last error. The
+	// `message' that's passed should be in the form of a present tense noun
 	// (phrase) such as "opening file".
 	// see https://msdn.microsoft.com/en-us/library/windows/desktop/ms679351%28v=vs.85%29.aspx
 	//char *ptr = NULL;
@@ -295,9 +290,9 @@ char *getTempFile(char *prefix) {
 	}
 	printInfo(LOG_DEBUG, stdout,
 		"Temp file path (%s)\n", lpTempPathBuffer);
-				
+
 	uRetVal = GetTempFileName(lpTempPathBuffer, prefix,
-                              0, szTempFileName); 
+                              0, szTempFileName);
 	if(uRetVal == 0) {
 		printError(stderr, "Unable creating temp file");
 		throw(NotEnoughMemoryException, "Unable creating temp file (file)");
