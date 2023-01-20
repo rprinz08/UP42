@@ -443,7 +443,8 @@ int main(int argc, const char **argv) {
                    : (stopBits == 1 ? "1.5" : (stopBits == 2 ? "2" : "-"))));
 
     // connect to board
-    printInfo(LOG_NORMAL, stdout, "Connecting ");
+    printInfo(LOG_NORMAL, stdout, "Connecting ...%c",
+      (verbosity >= LOG_DEBUG ? '\n' : ' '));
 
     // reset board via serial DTR low
     if (!noDTR) {
